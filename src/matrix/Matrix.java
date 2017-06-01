@@ -20,7 +20,7 @@ public interface Matrix {
     /**
      * @return a two-element array: {number rows, number columns}
      */
-    public Double[] size();
+    public int[] size();
     
     /**
      * Returns the desired row in array form
@@ -28,7 +28,7 @@ public interface Matrix {
      * @return double array containing row elements in order
      * @throws IllegalArgumentException if row index out of range
      */
-    public Double[] getRow(int row) throws IllegalArgumentException;
+    public double[] getRow(int row) throws IllegalArgumentException;
     
     /**
      * Returns the desired column in array form
@@ -36,7 +36,7 @@ public interface Matrix {
      * @return double array containing column elements in order
      * @throws IllegalArgumentException if column index out of range
      */
-    public Double[] getColumn(int column) throws IllegalArgumentException;
+    public double[] getColumn(int column) throws IllegalArgumentException;
     
     /**
      * adds the two matrices together
@@ -47,7 +47,7 @@ public interface Matrix {
     public Matrix add(Matrix matr) throws IllegalArgumentException;
     
     /**
-     * multiplies the two matrices together
+     * multiplies the two matrices together (this x matr)
      * @param matr valid Matrix instance
      * @return product of two matrices
      * @throws IllegalArgumentException if dimensions are incompatible

@@ -1,7 +1,6 @@
 package matrix;
 
 import java.util.List;
-import java.util.Map;
 
 /*
  * Implementation of Matrix with nonzero dimensions.
@@ -150,14 +149,54 @@ public class ArrayMatrix implements Matrix {
 
     @Override
     public Matrix ref() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Map<Double, List<Matrix>> eigen() {
-        // TODO Auto-generated method stub
-        return null;
+        int[] dimensions = size();
+        double[][] newMatrix = new double[dimensions[0]][dimensions[1]];
+        for (int row = 0; row < dimensions[0]; row++) {
+            for (int column = 0; column < dimensions[1]; column++) {
+                newMatrix[row][column] = matrix[row][column];
+            }
+        }
+        
+        //perform row swaps for each column
+        for (int columnCheck = 0; columnCheck < dimensions[1]; columnCheck++) {
+           
+            //find any row with the nonzero value in this column
+            double valueCheck = 0;
+            double[] lowestRow = new double[dimensions[1]];
+            int index = columnCheck - 1;
+            while (valueCheck == 0 && index < dimensions[0] - 1) {
+                index++;
+                lowestRow = newMatrix[index];
+                valueCheck = lowestRow[columnCheck];
+            }
+            if (valueCheck == 0) {
+                continue;
+            }
+            
+            //simplify row so that first element is 1
+            double criticalElt = valueCheck;
+            for (int j = 0; j < lowestRow.length; j++) {
+                lowestRow[j] = lowestRow[j] / criticalElt;
+            }
+            
+            //use simplified row to reduce rest of matrix
+            for (int row = 0; row < dimensions[0]; row++) {
+                if (row != index) {
+                    double[] rowToBeReduced = newMatrix[row];
+                    double entryFactor = rowToBeReduced[columnCheck];
+                    for (int j = 0; j < rowToBeReduced.length; j++) {
+                        rowToBeReduced[j] = rowToBeReduced[j] - entryFactor * lowestRow[j];
+                    }
+                }
+            }
+            
+            //swap rows
+            double[] tmp = newMatrix[columnCheck];
+            newMatrix[columnCheck] = lowestRow;
+            newMatrix[index] = tmp;
+        }
+        
+        return new ArrayMatrix(newMatrix);
     }
 
     @Override
@@ -208,6 +247,34 @@ public class ArrayMatrix implements Matrix {
         return grid;
     }
     
+    @Override
+    public double determinant() throws IllegalArgumentException {
+        int[] dimensions = size();
+        if (dimensions[0] != dimensions[1]) {
+            throw new IllegalArgumentException("Determinant not defined for non-square matrix");
+        }
+        
+        double determinant = 0;
+        for (int column = 0; column < dimensions[1]; column++) {
+            double posPartial = 1;
+            double negPartial = 1;
+            for (int row = 0; row < dimensions[0]; row++) {
+                double posElt = matrix[row][(column + row) % dimensions[1]];
+                int negCheck = column - row;
+                if (negCheck < 0) {
+                    negCheck += dimensions[1];
+                }
+                double negElt = matrix[row][negCheck % dimensions[1]];
+                posPartial *= posElt;
+                negPartial *= negElt;
+            }
+            determinant += posPartial;
+            determinant -= negPartial;
+        }
+        
+        return determinant;
+    }
+    
     /**
      * checks if row contains only zeroes
      * @param row integer in range [0, number rows)
@@ -224,7 +291,11 @@ public class ArrayMatrix implements Matrix {
     }
     
     public static void main(String args[]) {
-        Matrix id = ArrayMatrix.identity(3);
-        System.out.println(id.multiply(0));
+        double[] row1 = {1, 0, 0};
+        double[] row2 = {0, 1, 6};
+        double[] row3 = {0, 3, 1};
+        double[][] matrix = {row1, row2, row3};
+        Matrix check = new ArrayMatrix(matrix);
+        System.out.println(check.determinant());
     }
 }

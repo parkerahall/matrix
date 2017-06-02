@@ -1,8 +1,5 @@
 package matrix;
 
-import java.util.List;
-import java.util.Map;
-
 /*
  * Representation of a mathematical matrix with real entries.
  */
@@ -68,10 +65,11 @@ public interface Matrix {
     public Matrix ref();
     
     /**
-     * calculates the real eigenvalues and eigenvectors of the matrix, if any exist
-     * @return a mapping of eigenvalues to their corresponding eigenvectors (represented as single-column matrices)
+     * calculates the determinant of the matrix (AKA the signed n-dimensional volume)
+     * @return the determinant of this
+     * @throws IllegalArgumentException if the matrix is not square
      */
-    public Map<Double, List<Matrix>> eigen();
+    public double determinant() throws IllegalArgumentException;
     
     /**
      * @return the rank of the matrix

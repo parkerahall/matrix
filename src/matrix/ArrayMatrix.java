@@ -1,6 +1,8 @@
 package matrix;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /*
  * Implementation of Matrix with nonzero dimensions.
@@ -8,7 +10,7 @@ import java.util.List;
 
 public class ArrayMatrix implements Matrix {
     
-    double[][] matrix;
+    private final double[][] matrix;
 
     public ArrayMatrix(double[][] entries) {
         matrix = new double[entries.length][entries[0].length];
@@ -148,69 +150,22 @@ public class ArrayMatrix implements Matrix {
     }
 
     @Override
-    public Matrix ref() {
-        int[] dimensions = size();
-        double[][] newMatrix = new double[dimensions[0]][dimensions[1]];
-        for (int row = 0; row < dimensions[0]; row++) {
-            for (int column = 0; column < dimensions[1]; column++) {
-                newMatrix[row][column] = matrix[row][column];
-            }
-        }
-        
-        //perform row swaps for each column
-        for (int columnCheck = 0; columnCheck < dimensions[1]; columnCheck++) {
-           
-            //find any row with the nonzero value in this column
-            double valueCheck = 0;
-            double[] lowestRow = new double[dimensions[1]];
-            int index = columnCheck - 1;
-            while (valueCheck == 0 && index < dimensions[0] - 1) {
-                index++;
-                lowestRow = newMatrix[index];
-                valueCheck = lowestRow[columnCheck];
-            }
-            if (valueCheck == 0) {
-                continue;
-            }
-            
-            //simplify row so that first element is 1
-            double criticalElt = valueCheck;
-            for (int j = 0; j < lowestRow.length; j++) {
-                lowestRow[j] = lowestRow[j] / criticalElt;
-            }
-            
-            //use simplified row to reduce rest of matrix
-            for (int row = 0; row < dimensions[0]; row++) {
-                if (row != index) {
-                    double[] rowToBeReduced = newMatrix[row];
-                    double entryFactor = rowToBeReduced[columnCheck];
-                    for (int j = 0; j < rowToBeReduced.length; j++) {
-                        rowToBeReduced[j] = rowToBeReduced[j] - entryFactor * lowestRow[j];
-                    }
-                }
-            }
-            
-            //swap rows
-            double[] tmp = newMatrix[columnCheck];
-            newMatrix[columnCheck] = lowestRow;
-            newMatrix[index] = tmp;
-        }
-        
-        return new ArrayMatrix(newMatrix);
+    public Matrix rref() {
+        return rrefAndPseudoInverse()[0];
     }
 
     @Override
     public int rank() {
-        int numZeroRows = 0;
-        ArrayMatrix ref = (ArrayMatrix)ref();
-        for (int row = ref.size()[0] - 1; row >= 0; row--) {
-            if (ref.rowIsZero(row)) {
-                numZeroRows += 1;
+        int numNonzeroRows = 0;
+        Matrix ref = rref();
+        for (int row = 0; row < ref.size()[0]; row++) {
+            if (ref.rowNotZero(row)) {
+                numNonzeroRows += 1;
             } else {
-                return numZeroRows;
+                return numNonzeroRows;
             }
         }
-        return numZeroRows;
+        return numNonzeroRows;
     }
 
     @Override
@@ -234,17 +189,50 @@ public class ArrayMatrix implements Matrix {
             for (int column = 0; column < currentRow.length; column++) {
                 String currentElt = String.valueOf(currentRow[column]);
                 if (column == currentRow.length - 1) {
-                    if (row == matrix.length - 1) {
-                        grid += currentElt;
-                    } else {
-                        grid += currentElt + "\n";
-                    }
+                    grid += currentElt + "\n";
                 } else {
                     grid += currentElt + "\t";
                 }
             }
         }
         return grid;
+    }
+    
+    @Override
+    public boolean equals(Object that) {
+        if (!(that instanceof Matrix)) return false;
+        Matrix thatMat = (Matrix)that;
+        
+        int[] thisDim = size();
+        int[] thatDim = thatMat.size();
+        if (thisDim[0] != thatDim[0] || thisDim[1] != thatDim[1]) {
+            return false;
+        }
+        
+        for (int i = 0; i < thisDim[0]; i++) {
+            for (int j = 0; j < thisDim[1]; j++) {
+                double thisElt = getElement(i, j);
+                double thatElt = thatMat.getElement(i, j);
+                if (thisElt != thatElt) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    @Override
+    public int hashCode() {
+        double sum = 0;
+        
+        int[] dimensions = size();
+        for (int i = 0; i < dimensions[0]; i++) {
+            for (int j = 0; j < dimensions[1]; j++) {
+                sum += getElement(i, j);
+            }
+        }
+        
+        return (int)sum % 10000;
     }
     
     @Override
@@ -275,27 +263,191 @@ public class ArrayMatrix implements Matrix {
         return determinant;
     }
     
-    /**
-     * checks if row contains only zeroes
-     * @param row integer in range [0, number rows)
-     * @return true if all elements in row are 0, false otherwise
-     */
-    private boolean rowIsZero(int row) {
+    @Override
+    public Matrix inverse() throws IllegalArgumentException {
+        int[] dimensions = size();
+        if (dimensions[0] != dimensions[1]) {
+            throw new IllegalArgumentException("Inverse not defined for non-square matrix");
+        }
+        
+        double determinant = determinant();
+        if (determinant == 0) {
+            throw new IllegalArgumentException("Inverse not defined for matrices with determinant of zero");
+        }
+        
+        return rrefAndPseudoInverse()[1];
+    }
+
+    @Override
+    public Set<Matrix> nullspace() {
+        //perform same column operations on matrix and identity simultaneously, similarly to inverse
+        //any zero columns in augmented matrix correspond to columns in augmented id that are in nullspace of matrix
+        
+        //construct transpose of matrix
+        ArrayMatrix transpose = (ArrayMatrix)transpose();
+        
+        //find ref and inverse of transpose
+        Matrix[] matrices = transpose.rrefAndPseudoInverse();
+        Matrix rref = matrices[0];
+        Matrix inverse = matrices[1];
+        
+        int[] dimensions = rref.size();
+        
+        //any zero rows in ref correspond to the transpose of nullspace vectors in inverse
+        Set<Matrix> nullspace = new HashSet<>();
+        for (int row = 0; row < dimensions[1]; row++) {
+            if (!rref.rowNotZero(row)) {
+                double[] nullArr = inverse.getRow(row);
+                double[][] colArr = new double[dimensions[1]][1];
+                for (int columnIndex = 0; columnIndex < dimensions[1]; columnIndex++) {
+                    colArr[columnIndex][0] = nullArr[columnIndex];
+                }
+                Matrix columnVec = new ArrayMatrix(colArr);
+                nullspace.add(columnVec);
+            }
+        }
+        
+        return nullspace;
+    }
+    
+    @Override
+    public Matrix transpose() {
+        int[] dimensions = size();
+        double[][] transposeArr = new double[dimensions[1]][dimensions[0]];
+        for (int i = 0; i < dimensions[0]; i++) {
+            for (int j = 0; j < dimensions[1]; j++) {
+                transposeArr[j][i] = matrix[i][j];
+            }
+        }
+        return new ArrayMatrix(transposeArr);
+    }
+    
+    @Override
+    public boolean rowNotZero(int row) {
         double[] currentRow = matrix[row];
         for (double elt: currentRow) {
             if (elt != 0) {
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
+    }
+    
+    /**
+     * checks whether row contains nonzero values
+     * @param row array of doubles
+     * @return false if row only contains 0, true otherwise
+     */
+    private static boolean rowNotZero(double[] row) {
+        for (double elt: row) {
+            if (elt != 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * while reducing matrix A to rref, perform all necessary row operations on identity matrix I
+     * @return an two-element array of Matrix objects
+     *          the first element is A in rref, while the second element is the result of performing
+     *          the same row operations on I
+     */
+    private Matrix[] rrefAndPseudoInverse() {
+        int[] dimensions = size();
+        
+        //perform same operations as ref, while copying row operations to identity matrix of same size
+        double[][] id = new double[dimensions[0]][dimensions[1]];
+        for (int i = 0; i < dimensions[1]; i++) {
+            id[i][i] = 1;
+        }
+        
+        double[][] newMatrix = new double[dimensions[0]][dimensions[1]];
+        for (int row = 0; row < dimensions[0]; row++) {
+            for (int column = 0; column < dimensions[1]; column++) {
+                newMatrix[row][column] = matrix[row][column];
+            }
+        }
+        
+        //perform row swaps for each column
+        for (int columnCheck = 0; columnCheck < dimensions[1]; columnCheck++) {
+           
+            //find any row with the nonzero value in this column
+            double valueCheck = 0;
+            double[] lowestRow = new double[dimensions[1]];
+            int index = columnCheck - 1;
+            while (valueCheck == 0 && index < dimensions[0] - 1) {
+                index++;
+                lowestRow = newMatrix[index];
+                valueCheck = lowestRow[columnCheck];
+            }
+            if (valueCheck == 0) {
+                continue;
+            }
+            
+            //retrieve same information from id matrix
+            double[] idRow = id[index];
+            
+            //simplify row so that first element is 1
+            double criticalElt = valueCheck;
+            for (int j = 0; j < lowestRow.length; j++) {
+                lowestRow[j] = lowestRow[j] / criticalElt;
+                idRow[j] = idRow[j] / criticalElt;
+            }
+            
+            //use simplified row to reduce rest of matrix
+            for (int row = 0; row < dimensions[0]; row++) {
+                if (row != index) {
+                    double[] rowToBeReduced = newMatrix[row];
+                    double entryFactor = rowToBeReduced[columnCheck];
+                    
+                    double[] idTBR = id[row];
+                    
+                    for (int j = 0; j < rowToBeReduced.length; j++) {
+                        rowToBeReduced[j] = rowToBeReduced[j] - entryFactor * lowestRow[j];
+                        idTBR[j] = idTBR[j] - entryFactor * idRow[j];
+                    }
+                }
+            }
+            
+            //swap rows
+            double[] tmp = newMatrix[columnCheck];
+            newMatrix[columnCheck] = lowestRow;
+            newMatrix[index] = tmp;
+            
+            double[] idTmp = id[columnCheck];
+            id[columnCheck] = idRow;
+            id[index] = idTmp;
+        }
+        
+        //move all zero rows to the bottom of the matrix
+        for (int i = 0; i < dimensions[0]; i++) {
+            double[] currentRow = newMatrix[i];
+            if (!ArrayMatrix.rowNotZero(currentRow)) {
+                for (int j = i; j < dimensions[0] - 1; j++) {
+                    double[] tmp = newMatrix[j + 1];
+                    newMatrix[j + 1] = newMatrix[j];
+                    newMatrix[j] = tmp;
+                    
+                    double[] idTmp = id[j + 1];
+                    id[j + 1] = id[j];
+                    id[j] = idTmp;
+                }
+            }
+        }
+        
+        Matrix rref = new ArrayMatrix(newMatrix);
+        Matrix pseudoId = new ArrayMatrix(id);
+        Matrix[] output = {rref, pseudoId};
+        return output;
     }
     
     public static void main(String args[]) {
         double[] row1 = {1, 0, 0};
-        double[] row2 = {0, 1, 6};
-        double[] row3 = {0, 3, 1};
+        double[] row2 = {1, 1, 1};
+        double[] row3 = {0, 0, 1};
         double[][] matrix = {row1, row2, row3};
         Matrix check = new ArrayMatrix(matrix);
-        System.out.println(check.determinant());
+        System.out.println(check.inverse());
     }
 }

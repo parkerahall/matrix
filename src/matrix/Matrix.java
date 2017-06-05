@@ -1,5 +1,7 @@
 package matrix;
 
+import java.util.Set;
+
 /*
  * Representation of a mathematical matrix with real entries.
  */
@@ -62,7 +64,7 @@ public interface Matrix {
      * reduces the matrix to row echelon form
      * @return new Matrix instance
      */
-    public Matrix ref();
+    public Matrix rref();
     
     /**
      * calculates the determinant of the matrix (AKA the signed n-dimensional volume)
@@ -80,4 +82,29 @@ public interface Matrix {
      * @return the nullity of the matrix
      */
     public int nullity();
+    
+    /**
+     * for matrix A, return A^(-1) if it exists, such that AA^(-1) = A^(-1)A = I
+     * @return the inverse of the matrix
+     * @throws IllegalArgumentException if the matrix is not invertible
+     */
+    public Matrix inverse() throws IllegalArgumentException;
+    
+    /**
+     * computes the nullspace of the matrix, the set of vectors v such that Av = 0
+     * @return a set of linearly independent column vectors (n x 1 matrices) that span the nullspace
+     */
+    public Set<Matrix> nullspace();
+    
+    /**
+     * computes the transpose of the matrix A, A^T
+     * @return the tranpsoe of the matrix
+     */
+    public Matrix transpose();
+    
+    /**
+     * checks whether the row contains only zeros
+     * @return false if row only contains zero, true otherwise
+     */
+    public boolean rowNotZero(int row);
 }

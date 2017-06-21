@@ -1,9 +1,11 @@
 package matrix;
 
+import java.math.BigDecimal;
 import java.util.Set;
 
 /*
  * Representation of a mathematical matrix with real entries.
+ * BigDecimal accuracy.
  */
 public interface Matrix {
     
@@ -14,7 +16,7 @@ public interface Matrix {
      * @return element at Matrix[row, column]
      * @throws IllegalArgumentException if row or column out of range
      */
-    public double getElement(int row, int column) throws IllegalArgumentException;
+    public BigDecimal getElement(int row, int column) throws IllegalArgumentException;
     
     /**
      * @return a two-element array: {number rows, number columns}
@@ -27,7 +29,7 @@ public interface Matrix {
      * @return double array containing row elements in order
      * @throws IllegalArgumentException if row index out of range
      */
-    public double[] getRow(int row) throws IllegalArgumentException;
+    public BigDecimal[] getRow(int row) throws IllegalArgumentException;
     
     /**
      * Returns the desired column in array form
@@ -35,7 +37,7 @@ public interface Matrix {
      * @return double array containing column elements in order
      * @throws IllegalArgumentException if column index out of range
      */
-    public double[] getColumn(int column) throws IllegalArgumentException;
+    public BigDecimal[] getColumn(int column) throws IllegalArgumentException;
     
     /**
      * adds the two matrices together
@@ -44,6 +46,14 @@ public interface Matrix {
      * @throws IllegalArgumentException if dimensions are different
      */
     public Matrix add(Matrix matr) throws IllegalArgumentException;
+    
+    /**
+     * subtracts the two matrices (this - matr)
+     * @param matr valid Matrix instance
+     * @return difference of two matrices
+     * @throws IllegalArgumentException if dimensions are different
+     */
+    public Matrix subtract(Matrix matr) throws IllegalArgumentException;
     
     /**
      * multiplies the two matrices together (this x matr)
@@ -71,7 +81,16 @@ public interface Matrix {
      * @return the determinant of this
      * @throws IllegalArgumentException if the matrix is not square
      */
-    public double determinant() throws IllegalArgumentException;
+    public BigDecimal determinant() throws IllegalArgumentException;
+    
+    /**
+     * returns the minor of the given location (cofactor)
+     * @param row row index of the cofactor
+     * @param column column index of the cofactor
+     * @return minor of the cofactor
+     * @throws IllegalArgumentException if the indices are out of range or matrix is not square
+     */
+    public Matrix minor(int row, int column) throws IllegalArgumentException;
     
     /**
      * @return the rank of the matrix

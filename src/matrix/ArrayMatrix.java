@@ -1,5 +1,8 @@
 package matrix;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -10,36 +13,58 @@ import java.util.Set;
 
 public class ArrayMatrix implements Matrix {
     
-    private final double[][] matrix;
+    private final static BigDecimal ERROR = new BigDecimal(Math.pow(10, -15));
+    
+    private final BigDecimal[][] matrix;
+    private final int numRows;
+    private final int numCols;
 
     public ArrayMatrix(double[][] entries) {
-        matrix = new double[entries.length][entries[0].length];
+        matrix = new BigDecimal[entries.length][entries[0].length];
         for (int row = 0; row < entries.length; row++) {
             double[] currentRow = entries[row];
             for (int column = 0; column < currentRow.length; column++) {
-                matrix[row][column] = currentRow[column];
+                matrix[row][column] = new BigDecimal(currentRow[column]);
             }
         }
+        numRows = entries.length;
+        numCols = entries[0].length;
     }
     
     public ArrayMatrix(int[][] entries) {
-        matrix = new double[entries.length][entries[0].length];
+        matrix = new BigDecimal[entries.length][entries[0].length];
         for (int row = 0; row < entries.length; row++) {
             int[] currentRow = entries[row];
             for (int column = 0; column < currentRow.length; column++) {
-                matrix[row][column] = currentRow[column];
+                matrix[row][column] = new BigDecimal(currentRow[column]);
             }
         }
+        numRows = entries.length;
+        numCols = entries.length;
+    }
+    
+    public ArrayMatrix(BigDecimal[][] entries) {
+        matrix = new BigDecimal[entries.length][entries[0].length];
+        for (int row = 0; row < entries.length; row++) {
+            BigDecimal[] currentRow = entries[row];
+            for (int column = 0; column < currentRow.length; column++) {
+                matrix[row][column] = currentRow[column].add(BigDecimal.ZERO);
+            }
+        }
+        numRows = entries.length;
+        numCols = entries[0].length;
     }
     
     public ArrayMatrix(List<List<Double>> entries) {
-        matrix = new double[entries.size()][entries.get(0).size()];
+        matrix = new BigDecimal[entries.size()][entries.get(0).size()];
         for (int row = 0; row < entries.size(); row++) {
             List<Double> currentRow = entries.get(row);
             for (int column = 0; column < currentRow.size(); column++) {
-                matrix[row][column] = currentRow.get(column);
+                matrix[row][column] = new BigDecimal(currentRow.get(column));
             }
         }
+        numRows = entries.size();
+        numCols = entries.get(0).size();
     }
     
     public static Matrix identity(int size) {
@@ -51,41 +76,42 @@ public class ArrayMatrix implements Matrix {
     }
     
     @Override
-    public double getElement(int row, int column) throws IllegalArgumentException {
-        return matrix[row][column];
+    public BigDecimal getElement(int row, int column) throws IllegalArgumentException {
+        if (row < 0 || row >= numRows || column < 0 || column >= numCols) {
+            throw new IllegalArgumentException("Location out of bounds");
+        }
+        return matrix[row][column].add(BigDecimal.ZERO);
     }
 
     @Override
     public int[] size() {
-        int[] dimensions = new int[2];
-        dimensions[0] = matrix.length;
-        dimensions[1] = matrix[0].length;
+        int[] dimensions = {numRows, numCols};
         return dimensions;
     }
 
     @Override
-    public double[] getRow(int row) throws IllegalArgumentException {
-        if (row < 0 || row >= matrix.length) {
+    public BigDecimal[] getRow(int row) throws IllegalArgumentException {
+        if (row < 0 || row >= numRows) {
             throw new IllegalArgumentException("Row index out of bounds");
         }
         
-        double[] currentRow = matrix[row];
-        double[] copyRow = new double[currentRow.length];
-        for (int i = 0; i < currentRow.length; i++) {
-            copyRow[i] = currentRow[i];
+        BigDecimal[] currentRow = matrix[row];
+        BigDecimal[] copyRow = new BigDecimal[numCols];
+        for (int i = 0; i < numCols; i++) {
+            copyRow[i] = currentRow[i].add(BigDecimal.ZERO);
         }
         return copyRow;
     }
 
     @Override
-    public double[] getColumn(int column) throws IllegalArgumentException {
-        if (column < 0 || column >= matrix[0].length) {
+    public BigDecimal[] getColumn(int column) throws IllegalArgumentException {
+        if (column < 0 || column >= numCols) {
             throw new IllegalArgumentException("Column index out of bounds");
         }
         
-        double[] copyColumn = new double[matrix.length];
-        for (int i = 0; i < matrix.length; i++) {
-            copyColumn[i] = matrix[i][column];
+        BigDecimal[] copyColumn = new BigDecimal[numRows];
+        for (int i = 0; i < numRows; i++) {
+            copyColumn[i] = matrix[i][column].add(BigDecimal.ZERO);
         }
         return copyColumn;
     }
@@ -98,11 +124,28 @@ public class ArrayMatrix implements Matrix {
             throw new IllegalArgumentException("Invalid dimensions for addition");
         }
         
-        double[][] newMatrix = new double[thisSize[0]][thisSize[1]];
-        for (int row = 0; row < matrix.length; row++) {
-            double[] currentRow = matrix[row];
-            for (int column = 0; column < currentRow.length; column++) {
-                newMatrix[row][column] = getElement(row, column) + matr.getElement(row, column);
+        BigDecimal[][] newMatrix = new BigDecimal[thisSize[0]][thisSize[1]];
+        for (int row = 0; row < thisSize[0]; row++) {
+            for (int column = 0; column < thisSize[1]; column++) {
+                newMatrix[row][column] = getElement(row, column).add(matr.getElement(row, column));
+            }
+        }
+        
+        return new ArrayMatrix(newMatrix);
+    }
+    
+    @Override
+    public Matrix subtract(Matrix matr) throws IllegalArgumentException {
+        int[] thisSize = size();
+        int[] thatSize = matr.size();
+        if (thisSize[0] != thatSize[0] || thisSize[1] != thatSize[1]) {
+            throw new IllegalArgumentException("Invalid dimensions for addition");
+        }
+        
+        BigDecimal[][] newMatrix = new BigDecimal[thisSize[0]][thisSize[1]];
+        for (int row = 0; row < thisSize[0]; row++) {
+            for (int column = 0; column < thisSize[1]; column++) {
+                newMatrix[row][column] = getElement(row, column).subtract(matr.getElement(row, column));
             }
         }
         
@@ -117,15 +160,15 @@ public class ArrayMatrix implements Matrix {
             throw new IllegalArgumentException("Invalid dimensions for multiplication");
         }
         
-        double[][] newMatrix = new double[thisSize[0]][thatSize[1]];
+        BigDecimal[][] newMatrix = new BigDecimal[thisSize[0]][thatSize[1]];
         for (int row = 0; row < thisSize[0]; row++) {
-            double[] currentRow = matrix[row];
+            BigDecimal[] currentRow = matrix[row];
             for (int column = 0; column < thatSize[1]; column++) {
-                double[] currentColumn = matr.getColumn(column);
-                double dotProduct = 0;
-                for (int i = 0; i < currentRow.length; i++) {
-                    double partial = currentRow[i] * currentColumn[i];
-                    dotProduct += partial;
+                BigDecimal[] currentColumn = matr.getColumn(column);
+                BigDecimal dotProduct = BigDecimal.ZERO;
+                for (int i = 0; i < thisSize[1]; i++) {
+                    BigDecimal partial = currentRow[i].multiply(currentColumn[i]);
+                    dotProduct = dotProduct.add(partial);
                 }
                 newMatrix[row][column] = dotProduct;
             }
@@ -136,13 +179,13 @@ public class ArrayMatrix implements Matrix {
 
     @Override
     public Matrix multiply(double element) {
-        double[][] newMatrix = new double[matrix.length][matrix[0].length];
+        BigDecimal[][] newMatrix = new BigDecimal[matrix.length][matrix[0].length];
         
-        for (int row = 0; row < matrix.length; row++) {
-            double[] currentRow = matrix[row];
-            for (int column = 0; column < currentRow.length; column++) {
-                double currentElement = currentRow[column];
-                newMatrix[row][column] = currentElement * element;
+        for (int row = 0; row < numRows; row++) {
+            BigDecimal[] currentRow = matrix[row];
+            for (int column = 0; column < numCols; column++) {
+                BigDecimal currentElement = currentRow[column];
+                newMatrix[row][column] = currentElement.multiply(new BigDecimal(element));
             }
         }
         
@@ -184,11 +227,11 @@ public class ArrayMatrix implements Matrix {
      */
     public String toString() {
         String grid = "";
-        for (int row = 0; row < matrix.length; row++) {
-            double[] currentRow = matrix[row];
-            for (int column = 0; column < currentRow.length; column++) {
-                String currentElt = String.valueOf(currentRow[column]);
-                if (column == currentRow.length - 1) {
+        for (int row = 0; row < numRows; row++) {
+            BigDecimal[] currentRow = matrix[row];
+            for (int column = 0; column < numCols; column++) {
+                String currentElt = currentRow[column].toString();
+                if (column == numCols - 1) {
                     grid += currentElt + "\n";
                 } else {
                     grid += currentElt + "\t";
@@ -198,6 +241,10 @@ public class ArrayMatrix implements Matrix {
         return grid;
     }
     
+    /**
+     * two matrices are considered equivalent if their dimensions are the same, and each element
+     * is equal up to an error of 10^(-15)
+     */
     @Override
     public boolean equals(Object that) {
         if (!(that instanceof Matrix)) return false;
@@ -211,9 +258,11 @@ public class ArrayMatrix implements Matrix {
         
         for (int i = 0; i < thisDim[0]; i++) {
             for (int j = 0; j < thisDim[1]; j++) {
-                double thisElt = getElement(i, j);
-                double thatElt = thatMat.getElement(i, j);
-                if (thisElt != thatElt) {
+                BigDecimal thisElt = getElement(i, j);
+                BigDecimal thatElt = thatMat.getElement(i, j);
+                if (thisElt.subtract(thatElt).abs().compareTo(ERROR) == 1) {
+                    System.err.println(thisElt);
+                    System.err.println(thatElt);
                     return false;
                 }
             }
@@ -225,10 +274,9 @@ public class ArrayMatrix implements Matrix {
     public int hashCode() {
         double sum = 0;
         
-        int[] dimensions = size();
-        for (int i = 0; i < dimensions[0]; i++) {
-            for (int j = 0; j < dimensions[1]; j++) {
-                sum += getElement(i, j);
+        for (int i = 0; i < numRows; i++) {
+            for (int j = 0; j < numCols; j++) {
+                sum += getElement(i, j).doubleValue();
             }
         }
         
@@ -236,42 +284,67 @@ public class ArrayMatrix implements Matrix {
     }
     
     @Override
-    public double determinant() throws IllegalArgumentException {
-        int[] dimensions = size();
-        if (dimensions[0] != dimensions[1]) {
+    public BigDecimal determinant() throws IllegalArgumentException {
+        if (numRows != numCols) {
             throw new IllegalArgumentException("Determinant not defined for non-square matrix");
         }
         
-        double determinant = 0;
-        for (int column = 0; column < dimensions[1]; column++) {
-            double posPartial = 1;
-            double negPartial = 1;
-            for (int row = 0; row < dimensions[0]; row++) {
-                double posElt = matrix[row][(column + row) % dimensions[1]];
-                int negCheck = column - row;
-                if (negCheck < 0) {
-                    negCheck += dimensions[1];
-                }
-                double negElt = matrix[row][negCheck % dimensions[1]];
-                posPartial *= posElt;
-                negPartial *= negElt;
-            }
-            determinant += posPartial;
-            determinant -= negPartial;
+        if (numCols == 1) {
+            return getElement(0,0);
+        }
+        
+        BigDecimal[] firstRow = getRow(0);
+        BigDecimal determinant = BigDecimal.ZERO;
+        for (int i = 0; i < numRows; i++) {
+            BigDecimal cofactor = firstRow[i];
+            BigDecimal sign = new BigDecimal(Math.pow(-1, i));
+            
+            Matrix minor = minor(0, i);
+            BigDecimal minorDet = minor.determinant();
+            
+            determinant = determinant.add(sign.multiply(cofactor.multiply(minorDet)));
         }
         
         return determinant;
     }
     
     @Override
+    public Matrix minor(int row, int column) throws IllegalArgumentException {
+        if (numRows != numCols) {
+            throw new IllegalArgumentException("Matrix needs to be square");
+        }
+        
+        if (row >= numRows || column >= numCols) {
+            throw new IllegalArgumentException("Indices out of range");
+        }
+        
+        BigDecimal[][] minorMatrix = new BigDecimal[numRows - 1][numCols - 1];
+        
+        int currentRow = 0;
+        for (int rowIndex = 0; rowIndex < numRows; rowIndex++) {
+            if (rowIndex != row) {
+                int currentCol = 0;
+                for (int colIndex = 0; colIndex < numCols; colIndex++) {
+                    if (colIndex != column) {
+                        minorMatrix[currentRow][currentCol] = matrix[rowIndex][colIndex].add(BigDecimal.ZERO);
+                        currentCol++;
+                    }
+                }
+                currentRow++;
+            }
+        }
+        
+        return new ArrayMatrix(minorMatrix);
+    }
+    
+    @Override
     public Matrix inverse() throws IllegalArgumentException {
-        int[] dimensions = size();
-        if (dimensions[0] != dimensions[1]) {
+        if (numRows != numCols) {
             throw new IllegalArgumentException("Inverse not defined for non-square matrix");
         }
         
-        double determinant = determinant();
-        if (determinant == 0) {
+        BigDecimal determinant = determinant();
+        if (determinant.compareTo(BigDecimal.ZERO) == 0) {
             throw new IllegalArgumentException("Inverse not defined for matrices with determinant of zero");
         }
         
@@ -297,10 +370,10 @@ public class ArrayMatrix implements Matrix {
         Set<Matrix> nullspace = new HashSet<>();
         for (int row = 0; row < dimensions[1]; row++) {
             if (!rref.rowNotZero(row)) {
-                double[] nullArr = inverse.getRow(row);
-                double[][] colArr = new double[dimensions[1]][1];
+                BigDecimal[] nullArr = inverse.getRow(row);
+                BigDecimal[][] colArr = new BigDecimal[dimensions[1]][1];
                 for (int columnIndex = 0; columnIndex < dimensions[1]; columnIndex++) {
-                    colArr[columnIndex][0] = nullArr[columnIndex];
+                    colArr[columnIndex][0] = nullArr[columnIndex].add(BigDecimal.ZERO);
                 }
                 Matrix columnVec = new ArrayMatrix(colArr);
                 nullspace.add(columnVec);
@@ -312,11 +385,10 @@ public class ArrayMatrix implements Matrix {
     
     @Override
     public Matrix transpose() {
-        int[] dimensions = size();
-        double[][] transposeArr = new double[dimensions[1]][dimensions[0]];
-        for (int i = 0; i < dimensions[0]; i++) {
-            for (int j = 0; j < dimensions[1]; j++) {
-                transposeArr[j][i] = matrix[i][j];
+        BigDecimal[][] transposeArr = new BigDecimal[numCols][numRows];
+        for (int i = 0; i < numRows; i++) {
+            for (int j = 0; j < numCols; j++) {
+                transposeArr[j][i] = matrix[i][j].add(BigDecimal.ZERO);
             }
         }
         return new ArrayMatrix(transposeArr);
@@ -324,9 +396,9 @@ public class ArrayMatrix implements Matrix {
     
     @Override
     public boolean rowNotZero(int row) {
-        double[] currentRow = matrix[row];
-        for (double elt: currentRow) {
-            if (elt != 0) {
+        BigDecimal[] currentRow = matrix[row];
+        for (BigDecimal elt: currentRow) {
+            if (elt.compareTo(BigDecimal.ZERO) != 0) {
                 return true;
             }
         }
@@ -338,9 +410,9 @@ public class ArrayMatrix implements Matrix {
      * @param row array of doubles
      * @return false if row only contains 0, true otherwise
      */
-    private static boolean rowNotZero(double[] row) {
-        for (double elt: row) {
-            if (elt != 0) {
+    private static boolean rowNotZero(BigDecimal[] row) {
+        for (BigDecimal elt: row) {
+            if (elt.compareTo(BigDecimal.ZERO) != 0) {
                 return true;
             }
         }
@@ -354,84 +426,96 @@ public class ArrayMatrix implements Matrix {
      *          the same row operations on I
      */
     private Matrix[] rrefAndPseudoInverse() {
-        int[] dimensions = size();
-        
         //perform same operations as ref, while copying row operations to identity matrix of same size
-        double[][] id = new double[dimensions[0]][dimensions[1]];
-        for (int i = 0; i < dimensions[1]; i++) {
-            id[i][i] = 1;
+        BigDecimal[][] id = new BigDecimal[numRows][numCols];
+        for (int i = 0; i < numRows; i++) {
+            for (int j = 0; j < numCols; j++) {
+                if (i == j) {
+                    id[i][j] = BigDecimal.ONE;
+                } else {
+                    id[i][j] = BigDecimal.ZERO;
+                }
+            }
         }
         
-        double[][] newMatrix = new double[dimensions[0]][dimensions[1]];
-        for (int row = 0; row < dimensions[0]; row++) {
-            for (int column = 0; column < dimensions[1]; column++) {
-                newMatrix[row][column] = matrix[row][column];
+        BigDecimal[][] newMatrix = new BigDecimal[numRows][numCols];
+        for (int row = 0; row < numRows; row++) {
+            for (int column = 0; column < numCols; column++) {
+                newMatrix[row][column] = getElement(row, column).add(BigDecimal.ZERO);
             }
         }
         
         //perform row swaps for each column
-        for (int columnCheck = 0; columnCheck < dimensions[1]; columnCheck++) {
+        for (int columnCheck = 0; columnCheck < numCols; columnCheck++) {
            
             //find any row with the nonzero value in this column
-            double valueCheck = 0;
-            double[] lowestRow = new double[dimensions[1]];
+            BigDecimal valueCheck = BigDecimal.ZERO;
+            BigDecimal[] lowestRow = new BigDecimal[numCols];
             int index = columnCheck - 1;
-            while (valueCheck == 0 && index < dimensions[0] - 1) {
+            while (valueCheck.compareTo(BigDecimal.ZERO) == 0 && index < numRows - 1) {
                 index++;
                 lowestRow = newMatrix[index];
                 valueCheck = lowestRow[columnCheck];
             }
-            if (valueCheck == 0) {
+            if (valueCheck.compareTo(BigDecimal.ZERO) == 0) {
                 continue;
             }
             
             //retrieve same information from id matrix
-            double[] idRow = id[index];
+            BigDecimal[] idRow = id[index];
             
             //simplify row so that first element is 1
-            double criticalElt = valueCheck;
+            BigDecimal criticalElt = valueCheck;
             for (int j = 0; j < lowestRow.length; j++) {
-                lowestRow[j] = lowestRow[j] / criticalElt;
-                idRow[j] = idRow[j] / criticalElt;
+                lowestRow[j] = new BigDecimal(lowestRow[j].doubleValue() / criticalElt.doubleValue());
+                idRow[j] = new BigDecimal(idRow[j].doubleValue() / criticalElt.doubleValue());
             }
             
             //use simplified row to reduce rest of matrix
-            for (int row = 0; row < dimensions[0]; row++) {
+            for (int row = 0; row < numRows; row++) {
                 if (row != index) {
-                    double[] rowToBeReduced = newMatrix[row];
-                    double entryFactor = rowToBeReduced[columnCheck];
+                    BigDecimal[] rowToBeReduced = newMatrix[row];
+                    BigDecimal entryFactor = rowToBeReduced[columnCheck];
                     
-                    double[] idTBR = id[row];
+                    BigDecimal[] idTBR = new BigDecimal[numCols];
+                    for (int zero = 0; zero < numCols; zero++) {
+                        idTBR[zero] = BigDecimal.ZERO;
+                    }
+                    if (row < numCols) {
+                        idTBR = id[row];
+                    }
                     
-                    for (int j = 0; j < rowToBeReduced.length; j++) {
-                        rowToBeReduced[j] = rowToBeReduced[j] - entryFactor * lowestRow[j];
-                        idTBR[j] = idTBR[j] - entryFactor * idRow[j];
+                    for (int j = 0; j < numCols; j++) {
+                        rowToBeReduced[j] = rowToBeReduced[j].subtract(entryFactor.multiply(lowestRow[j]));
+                        idTBR[j] = idTBR[j].subtract(entryFactor.multiply(idRow[j]));
                     }
                 }
             }
             
             //swap rows
-            double[] tmp = newMatrix[columnCheck];
+            BigDecimal[] tmp = newMatrix[columnCheck];
             newMatrix[columnCheck] = lowestRow;
             newMatrix[index] = tmp;
             
-            double[] idTmp = id[columnCheck];
+            BigDecimal[] idTmp = id[columnCheck];
             id[columnCheck] = idRow;
             id[index] = idTmp;
         }
         
         //move all zero rows to the bottom of the matrix
-        for (int i = 0; i < dimensions[0]; i++) {
-            double[] currentRow = newMatrix[i];
+        for (int i = 0; i < numRows; i++) {
+            BigDecimal[] currentRow = newMatrix[i];
             if (!ArrayMatrix.rowNotZero(currentRow)) {
-                for (int j = i; j < dimensions[0] - 1; j++) {
-                    double[] tmp = newMatrix[j + 1];
+                for (int j = i; j < numRows - 1; j++) {
+                    BigDecimal[] tmp = newMatrix[j + 1];
                     newMatrix[j + 1] = newMatrix[j];
                     newMatrix[j] = tmp;
                     
-                    double[] idTmp = id[j + 1];
-                    id[j + 1] = id[j];
-                    id[j] = idTmp;
+                    if (j < numCols) {
+                        BigDecimal[] idTmp = id[j + 1];
+                        id[j + 1] = id[j];
+                        id[j] = idTmp;
+                    }
                 }
             }
         }

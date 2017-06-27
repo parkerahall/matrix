@@ -11,7 +11,7 @@ import java.util.Set;
  * Implementation of Matrix with nonzero dimensions.
  */
 
-public class ArrayMatrix implements Matrix<BigDecimal> {
+public class BigDecimalMatrix implements Matrix<BigDecimal> {
     
     private final static BigDecimal ERROR = new BigDecimal(Math.pow(10, -15));
     private final static int RREF_INDEX = 0;
@@ -21,7 +21,7 @@ public class ArrayMatrix implements Matrix<BigDecimal> {
     private final int numRows;
     private final int numCols;
 
-    public ArrayMatrix(double[][] entries) {
+    public BigDecimalMatrix(double[][] entries) {
         matrix = new BigDecimal[entries.length][entries[0].length];
         for (int row = 0; row < entries.length; row++) {
             double[] currentRow = entries[row];
@@ -33,7 +33,7 @@ public class ArrayMatrix implements Matrix<BigDecimal> {
         numCols = entries[0].length;
     }
     
-    public ArrayMatrix(int[][] entries) {
+    public BigDecimalMatrix(int[][] entries) {
         matrix = new BigDecimal[entries.length][entries[0].length];
         for (int row = 0; row < entries.length; row++) {
             int[] currentRow = entries[row];
@@ -45,7 +45,7 @@ public class ArrayMatrix implements Matrix<BigDecimal> {
         numCols = entries.length;
     }
     
-    public ArrayMatrix(BigDecimal[][] entries) {
+    public BigDecimalMatrix(BigDecimal[][] entries) {
         matrix = new BigDecimal[entries.length][entries[0].length];
         for (int row = 0; row < entries.length; row++) {
             BigDecimal[] currentRow = entries[row];
@@ -57,7 +57,7 @@ public class ArrayMatrix implements Matrix<BigDecimal> {
         numCols = entries[0].length;
     }
     
-    public ArrayMatrix(List<List<Double>> entries) {
+    public BigDecimalMatrix(List<List<Double>> entries) {
         matrix = new BigDecimal[entries.size()][entries.get(0).size()];
         for (int row = 0; row < entries.size(); row++) {
             List<Double> currentRow = entries.get(row);
@@ -74,7 +74,7 @@ public class ArrayMatrix implements Matrix<BigDecimal> {
         for (int i = 0; i < size; i++) {
             newMatrix[i][i] = 1;
         }
-        return new ArrayMatrix(newMatrix);
+        return new BigDecimalMatrix(newMatrix);
     }
     
     @Override
@@ -133,7 +133,7 @@ public class ArrayMatrix implements Matrix<BigDecimal> {
             }
         }
         
-        return new ArrayMatrix(newMatrix);
+        return new BigDecimalMatrix(newMatrix);
     }
     
     @Override
@@ -151,7 +151,7 @@ public class ArrayMatrix implements Matrix<BigDecimal> {
             }
         }
         
-        return new ArrayMatrix(newMatrix);
+        return new BigDecimalMatrix(newMatrix);
     }
 
     @Override
@@ -176,7 +176,7 @@ public class ArrayMatrix implements Matrix<BigDecimal> {
             }
         }
         
-       return new ArrayMatrix(newMatrix);
+       return new BigDecimalMatrix(newMatrix);
     }
 
     @Override
@@ -191,7 +191,7 @@ public class ArrayMatrix implements Matrix<BigDecimal> {
             }
         }
         
-        return new ArrayMatrix(newMatrix);
+        return new BigDecimalMatrix(newMatrix);
     }
 
     @Override
@@ -339,7 +339,7 @@ public class ArrayMatrix implements Matrix<BigDecimal> {
             }
         }
         
-        return new ArrayMatrix(minorMatrix);
+        return new BigDecimalMatrix(minorMatrix);
     }
     
     @Override
@@ -362,7 +362,7 @@ public class ArrayMatrix implements Matrix<BigDecimal> {
         //any zero columns in augmented matrix correspond to columns in augmented id that are in nullspace of matrix
         
         //construct transpose of matrix
-        ArrayMatrix transpose = (ArrayMatrix)transpose();
+        BigDecimalMatrix transpose = (BigDecimalMatrix)transpose();
         
         //find ref and inverse of transpose
         List<Matrix<BigDecimal>> matrices = transpose.rrefAndPseudoInverse();
@@ -380,7 +380,7 @@ public class ArrayMatrix implements Matrix<BigDecimal> {
                 for (int columnIndex = 0; columnIndex < dimensions[1]; columnIndex++) {
                     colArr[columnIndex][0] = nullArr[columnIndex].add(BigDecimal.ZERO);
                 }
-                Matrix<BigDecimal> columnVec = new ArrayMatrix(colArr);
+                Matrix<BigDecimal> columnVec = new BigDecimalMatrix(colArr);
                 nullspace.add(columnVec);
             }
         }
@@ -396,7 +396,7 @@ public class ArrayMatrix implements Matrix<BigDecimal> {
                 transposeArr[j][i] = matrix[i][j].add(BigDecimal.ZERO);
             }
         }
-        return new ArrayMatrix(transposeArr);
+        return new BigDecimalMatrix(transposeArr);
     }
     
     @Override
@@ -510,7 +510,7 @@ public class ArrayMatrix implements Matrix<BigDecimal> {
         //move all zero rows to the bottom of the matrix
         for (int i = 0; i < numRows; i++) {
             BigDecimal[] currentRow = newMatrix[i];
-            if (!ArrayMatrix.rowNotZero(currentRow)) {
+            if (!BigDecimalMatrix.rowNotZero(currentRow)) {
                 for (int j = i; j < numRows - 1; j++) {
                     BigDecimal[] tmp = newMatrix[j + 1];
                     newMatrix[j + 1] = newMatrix[j];
@@ -525,8 +525,8 @@ public class ArrayMatrix implements Matrix<BigDecimal> {
             }
         }
         
-        Matrix<BigDecimal> rref = new ArrayMatrix(newMatrix);
-        Matrix<BigDecimal> pseudoId = new ArrayMatrix(id);
+        Matrix<BigDecimal> rref = new BigDecimalMatrix(newMatrix);
+        Matrix<BigDecimal> pseudoId = new BigDecimalMatrix(id);
         List<Matrix<BigDecimal>> output = new ArrayList<>(Arrays.asList(rref, pseudoId));
         return output;
     }
@@ -536,7 +536,7 @@ public class ArrayMatrix implements Matrix<BigDecimal> {
         double[] row2 = {1, 1, 1};
         double[] row3 = {0, 0, 1};
         double[][] matrix = {row1, row2, row3};
-        Matrix<BigDecimal> check = new ArrayMatrix(matrix);
+        Matrix<BigDecimal> check = new BigDecimalMatrix(matrix);
         System.out.println(check.inverse());
     }
 }

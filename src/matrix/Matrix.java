@@ -1,13 +1,11 @@
 package matrix;
 
-import java.math.BigDecimal;
 import java.util.Set;
 
 /*
- * Representation of a mathematical matrix with real entries.
- * BigDecimal accuracy.
+ * Representation of a mathematical matrix parameterized by the type of its entry.sz
  */
-public interface Matrix {
+public interface Matrix<R> {
     
     /**
      * Returns the element at the specified location
@@ -16,7 +14,7 @@ public interface Matrix {
      * @return element at Matrix[row, column]
      * @throws IllegalArgumentException if row or column out of range
      */
-    public BigDecimal getElement(int row, int column) throws IllegalArgumentException;
+    public R getElement(int row, int column) throws IllegalArgumentException;
     
     /**
      * @return a two-element array: {number rows, number columns}
@@ -29,7 +27,7 @@ public interface Matrix {
      * @return double array containing row elements in order
      * @throws IllegalArgumentException if row index out of range
      */
-    public BigDecimal[] getRow(int row) throws IllegalArgumentException;
+    public R[] getRow(int row) throws IllegalArgumentException;
     
     /**
      * Returns the desired column in array form
@@ -37,7 +35,7 @@ public interface Matrix {
      * @return double array containing column elements in order
      * @throws IllegalArgumentException if column index out of range
      */
-    public BigDecimal[] getColumn(int column) throws IllegalArgumentException;
+    public R[] getColumn(int column) throws IllegalArgumentException;
     
     /**
      * adds the two matrices together
@@ -45,7 +43,7 @@ public interface Matrix {
      * @return sum of two matrices
      * @throws IllegalArgumentException if dimensions are different
      */
-    public Matrix add(Matrix matr) throws IllegalArgumentException;
+    public Matrix<R> add(Matrix<R> matr) throws IllegalArgumentException;
     
     /**
      * subtracts the two matrices (this - matr)
@@ -53,7 +51,7 @@ public interface Matrix {
      * @return difference of two matrices
      * @throws IllegalArgumentException if dimensions are different
      */
-    public Matrix subtract(Matrix matr) throws IllegalArgumentException;
+    public Matrix<R> subtract(Matrix<R> matr) throws IllegalArgumentException;
     
     /**
      * multiplies the two matrices together (this x matr)
@@ -61,27 +59,27 @@ public interface Matrix {
      * @return product of two matrices
      * @throws IllegalArgumentException if dimensions are incompatible
      */
-    public Matrix multiply(Matrix matr) throws IllegalArgumentException;
+    public Matrix<R> multiply(Matrix<R> matr) throws IllegalArgumentException;
     
     /**
      * multiplies all elements in matrix by element
      * @param element
      * @return new Matrix instance
      */
-    public Matrix multiply(double element);
+    public Matrix<R> multiply(double element);
     
     /**
      * reduces the matrix to row echelon form
      * @return new Matrix instance
      */
-    public Matrix rref();
+    public Matrix<R> rref();
     
     /**
      * calculates the determinant of the matrix (AKA the signed n-dimensional volume)
      * @return the determinant of this
      * @throws IllegalArgumentException if the matrix is not square
      */
-    public BigDecimal determinant() throws IllegalArgumentException;
+    public R determinant() throws IllegalArgumentException;
     
     /**
      * returns the minor of the given location (cofactor)
@@ -90,7 +88,7 @@ public interface Matrix {
      * @return minor of the cofactor
      * @throws IllegalArgumentException if the indices are out of range or matrix is not square
      */
-    public Matrix minor(int row, int column) throws IllegalArgumentException;
+    public Matrix<R> minor(int row, int column) throws IllegalArgumentException;
     
     /**
      * @return the rank of the matrix
@@ -107,19 +105,19 @@ public interface Matrix {
      * @return the inverse of the matrix
      * @throws IllegalArgumentException if the matrix is not invertible
      */
-    public Matrix inverse() throws IllegalArgumentException;
+    public Matrix<R> inverse() throws IllegalArgumentException;
     
     /**
      * computes the nullspace of the matrix, the set of vectors v such that Av = 0
      * @return a set of linearly independent column vectors (n x 1 matrices) that span the nullspace
      */
-    public Set<Matrix> nullspace();
+    public Set<Matrix<R>> nullspace();
     
     /**
      * computes the transpose of the matrix A, A^T
      * @return the tranpsoe of the matrix
      */
-    public Matrix transpose();
+    public Matrix<R> transpose();
     
     /**
      * checks whether the row contains only zeros

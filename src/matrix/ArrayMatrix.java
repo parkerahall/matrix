@@ -1,8 +1,8 @@
 package matrix;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
-import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -11,9 +11,11 @@ import java.util.Set;
  * Implementation of Matrix with nonzero dimensions.
  */
 
-public class ArrayMatrix implements Matrix {
+public class ArrayMatrix implements Matrix<BigDecimal> {
     
     private final static BigDecimal ERROR = new BigDecimal(Math.pow(10, -15));
+    private final static int RREF_INDEX = 0;
+    private final static int INV_INDEX = 1;
     
     private final BigDecimal[][] matrix;
     private final int numRows;
@@ -67,7 +69,7 @@ public class ArrayMatrix implements Matrix {
         numCols = entries.get(0).size();
     }
     
-    public static Matrix identity(int size) {
+    public static Matrix<BigDecimal> identity(int size) {
         double[][] newMatrix = new double[size][size];
         for (int i = 0; i < size; i++) {
             newMatrix[i][i] = 1;
@@ -117,7 +119,7 @@ public class ArrayMatrix implements Matrix {
     }
 
     @Override
-    public Matrix add(Matrix matr) throws IllegalArgumentException {
+    public Matrix<BigDecimal> add(Matrix<BigDecimal> matr) throws IllegalArgumentException {
         int[] thisSize = size();
         int[] thatSize = matr.size();
         if (thisSize[0] != thatSize[0] || thisSize[1] != thatSize[1]) {
@@ -135,7 +137,7 @@ public class ArrayMatrix implements Matrix {
     }
     
     @Override
-    public Matrix subtract(Matrix matr) throws IllegalArgumentException {
+    public Matrix<BigDecimal> subtract(Matrix<BigDecimal> matr) throws IllegalArgumentException {
         int[] thisSize = size();
         int[] thatSize = matr.size();
         if (thisSize[0] != thatSize[0] || thisSize[1] != thatSize[1]) {
@@ -153,7 +155,7 @@ public class ArrayMatrix implements Matrix {
     }
 
     @Override
-    public Matrix multiply(Matrix matr) throws IllegalArgumentException {
+    public Matrix<BigDecimal> multiply(Matrix<BigDecimal> matr) throws IllegalArgumentException {
         int[] thisSize = size();
         int[] thatSize = matr.size();
         if (thisSize[1] != thatSize[0]) {
@@ -178,7 +180,7 @@ public class ArrayMatrix implements Matrix {
     }
 
     @Override
-    public Matrix multiply(double element) {
+    public Matrix<BigDecimal> multiply(double element) {
         BigDecimal[][] newMatrix = new BigDecimal[matrix.length][matrix[0].length];
         
         for (int row = 0; row < numRows; row++) {
@@ -193,14 +195,14 @@ public class ArrayMatrix implements Matrix {
     }
 
     @Override
-    public Matrix rref() {
-        return rrefAndPseudoInverse()[0];
+    public Matrix<BigDecimal> rref() {
+        return rrefAndPseudoInverse().get(RREF_INDEX);
     }
 
     @Override
     public int rank() {
         int numNonzeroRows = 0;
-        Matrix ref = rref();
+        Matrix<BigDecimal> ref = rref();
         for (int row = 0; row < ref.size()[0]; row++) {
             if (ref.rowNotZero(row)) {
                 numNonzeroRows += 1;
@@ -244,11 +246,14 @@ public class ArrayMatrix implements Matrix {
     /**
      * two matrices are considered equivalent if their dimensions are the same, and each element
      * is equal up to an error of 10^(-15)
+     * this and that must have both have BigDecimal elements
      */
     @Override
     public boolean equals(Object that) {
         if (!(that instanceof Matrix)) return false;
-        Matrix thatMat = (Matrix)that;
+        // warnings suppressed as javadoc requires that to be Matrix<BigDecimal>
+        @SuppressWarnings("unchecked")
+        Matrix<BigDecimal> thatMat = (Matrix<BigDecimal>)that;
         
         int[] thisDim = size();
         int[] thatDim = thatMat.size();
@@ -299,7 +304,7 @@ public class ArrayMatrix implements Matrix {
             BigDecimal cofactor = firstRow[i];
             BigDecimal sign = new BigDecimal(Math.pow(-1, i));
             
-            Matrix minor = minor(0, i);
+            Matrix<BigDecimal> minor = minor(0, i);
             BigDecimal minorDet = minor.determinant();
             
             determinant = determinant.add(sign.multiply(cofactor.multiply(minorDet)));
@@ -309,7 +314,7 @@ public class ArrayMatrix implements Matrix {
     }
     
     @Override
-    public Matrix minor(int row, int column) throws IllegalArgumentException {
+    public Matrix<BigDecimal> minor(int row, int column) throws IllegalArgumentException {
         if (numRows != numCols) {
             throw new IllegalArgumentException("Matrix needs to be square");
         }
@@ -338,7 +343,7 @@ public class ArrayMatrix implements Matrix {
     }
     
     @Override
-    public Matrix inverse() throws IllegalArgumentException {
+    public Matrix<BigDecimal> inverse() throws IllegalArgumentException {
         if (numRows != numCols) {
             throw new IllegalArgumentException("Inverse not defined for non-square matrix");
         }
@@ -348,11 +353,11 @@ public class ArrayMatrix implements Matrix {
             throw new IllegalArgumentException("Inverse not defined for matrices with determinant of zero");
         }
         
-        return rrefAndPseudoInverse()[1];
+        return rrefAndPseudoInverse().get(INV_INDEX);
     }
 
     @Override
-    public Set<Matrix> nullspace() {
+    public Set<Matrix<BigDecimal>> nullspace() {
         //perform same column operations on matrix and identity simultaneously, similarly to inverse
         //any zero columns in augmented matrix correspond to columns in augmented id that are in nullspace of matrix
         
@@ -360,14 +365,14 @@ public class ArrayMatrix implements Matrix {
         ArrayMatrix transpose = (ArrayMatrix)transpose();
         
         //find ref and inverse of transpose
-        Matrix[] matrices = transpose.rrefAndPseudoInverse();
-        Matrix rref = matrices[0];
-        Matrix inverse = matrices[1];
+        List<Matrix<BigDecimal>> matrices = transpose.rrefAndPseudoInverse();
+        Matrix<BigDecimal> rref = matrices.get(RREF_INDEX);
+        Matrix<BigDecimal> inverse = matrices.get(INV_INDEX);
         
         int[] dimensions = rref.size();
         
         //any zero rows in ref correspond to the transpose of nullspace vectors in inverse
-        Set<Matrix> nullspace = new HashSet<>();
+        Set<Matrix<BigDecimal>> nullspace = new HashSet<>();
         for (int row = 0; row < dimensions[1]; row++) {
             if (!rref.rowNotZero(row)) {
                 BigDecimal[] nullArr = inverse.getRow(row);
@@ -375,7 +380,7 @@ public class ArrayMatrix implements Matrix {
                 for (int columnIndex = 0; columnIndex < dimensions[1]; columnIndex++) {
                     colArr[columnIndex][0] = nullArr[columnIndex].add(BigDecimal.ZERO);
                 }
-                Matrix columnVec = new ArrayMatrix(colArr);
+                Matrix<BigDecimal> columnVec = new ArrayMatrix(colArr);
                 nullspace.add(columnVec);
             }
         }
@@ -384,7 +389,7 @@ public class ArrayMatrix implements Matrix {
     }
     
     @Override
-    public Matrix transpose() {
+    public Matrix<BigDecimal> transpose() {
         BigDecimal[][] transposeArr = new BigDecimal[numCols][numRows];
         for (int i = 0; i < numRows; i++) {
             for (int j = 0; j < numCols; j++) {
@@ -421,11 +426,11 @@ public class ArrayMatrix implements Matrix {
     
     /**
      * while reducing matrix A to rref, perform all necessary row operations on identity matrix I
-     * @return an two-element array of Matrix objects
+     * @return an two-element list of Matrix objects
      *          the first element is A in rref, while the second element is the result of performing
      *          the same row operations on I
      */
-    private Matrix[] rrefAndPseudoInverse() {
+    private List<Matrix<BigDecimal>> rrefAndPseudoInverse() {
         //perform same operations as ref, while copying row operations to identity matrix of same size
         BigDecimal[][] id = new BigDecimal[numRows][numCols];
         for (int i = 0; i < numRows; i++) {
@@ -520,9 +525,9 @@ public class ArrayMatrix implements Matrix {
             }
         }
         
-        Matrix rref = new ArrayMatrix(newMatrix);
-        Matrix pseudoId = new ArrayMatrix(id);
-        Matrix[] output = {rref, pseudoId};
+        Matrix<BigDecimal> rref = new ArrayMatrix(newMatrix);
+        Matrix<BigDecimal> pseudoId = new ArrayMatrix(id);
+        List<Matrix<BigDecimal>> output = new ArrayList<>(Arrays.asList(rref, pseudoId));
         return output;
     }
     
@@ -531,7 +536,7 @@ public class ArrayMatrix implements Matrix {
         double[] row2 = {1, 1, 1};
         double[] row3 = {0, 0, 1};
         double[][] matrix = {row1, row2, row3};
-        Matrix check = new ArrayMatrix(matrix);
+        Matrix<BigDecimal> check = new ArrayMatrix(matrix);
         System.out.println(check.inverse());
     }
 }

@@ -7,9 +7,6 @@ package matrix;
 
 public class Complex {
     
-    private final static int REAL_INDEX = 0;
-    private final static int IMAG_INDEX = 1;
-    
     private final double real;
     private final double imaginary;
     
@@ -49,7 +46,7 @@ public class Complex {
     
     /**
      * Magnitude of a + bi is defined to be sqrt(a^2 + b^2)
-     * @return magnotude of this
+     * @return magnitude of this
      */
     public double magnitude() {
         double sumOfSquares = Math.pow(this.getReal(), 2) + Math.pow(this.getImag(), 2);
@@ -58,13 +55,17 @@ public class Complex {
     }
     
     /**
-     * Argument of a + bi defined as arctan(b / a)
+     * Argument of a + bi ranges from -pi/2 to pi/2
      * Arctan calculation implemented using Math.atan2
      * @return argument of this
+     * @throws UndefinedException if argument is undefined (0 + 0i)
      */
-    public double argument() {
+    public double argument() throws UndefinedException {
         double x = this.getReal();
         double y = this.getImag();
+        if (x == 0 && y == 0) {
+            throw new UndefinedException("Argument is undefined");
+        }
         return Math.atan2(y, x);
     }
     
@@ -136,17 +137,35 @@ public class Complex {
     public String toString() {
         return real + " + " + imaginary + "i";
     }
+    
+    @Override
+    public int hashCode() {
+        return (int)(Math.pow(this.getReal(), 2) - Math.pow(this.getImag(), 2));
+    }
 }
 
 class ZeroDenominatorException extends Exception {
     
     private static final long serialVersionUID = 1L;
 
-    public ZeroDenominatorException(){
+    public ZeroDenominatorException() {
         super();
-    };
+    }
     
     public ZeroDenominatorException(String message) {
+        super(message);
+    }
+}
+
+class UndefinedException extends Exception {
+    
+    private static final long serialVersionUID = 1L;
+    
+    public UndefinedException() {
+        super();
+    }
+    
+    public UndefinedException(String message) {
         super(message);
     }
 }

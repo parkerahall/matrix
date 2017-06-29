@@ -14,7 +14,7 @@ public interface Matrix<R> {
      * @return element at Matrix[row, column]
      * @throws IllegalArgumentException if row or column out of range
      */
-    public R getElement(int row, int column) throws IllegalArgumentException;
+    public R getElement(int row, int column) throws IndexOutOfBoundsException;
     
     /**
      * @return a two-element array: {number rows, number columns}
@@ -27,7 +27,7 @@ public interface Matrix<R> {
      * @return double array containing row elements in order
      * @throws IllegalArgumentException if row index out of range
      */
-    public R[] getRow(int row) throws IllegalArgumentException;
+    public R[] getRow(int row) throws IndexOutOfBoundsException;
     
     /**
      * Returns the desired column in array form
@@ -35,7 +35,7 @@ public interface Matrix<R> {
      * @return double array containing column elements in order
      * @throws IllegalArgumentException if column index out of range
      */
-    public R[] getColumn(int column) throws IllegalArgumentException;
+    public R[] getColumn(int column) throws IndexOutOfBoundsException;
     
     /**
      * adds the two matrices together
@@ -43,7 +43,7 @@ public interface Matrix<R> {
      * @return sum of two matrices
      * @throws IllegalArgumentException if dimensions are different
      */
-    public Matrix<R> add(Matrix<R> matr) throws IllegalArgumentException;
+    public Matrix<R> add(Matrix<R> matr) throws IncompatibleDimensionsException;
     
     /**
      * subtracts the two matrices (this - matr)
@@ -51,7 +51,7 @@ public interface Matrix<R> {
      * @return difference of two matrices
      * @throws IllegalArgumentException if dimensions are different
      */
-    public Matrix<R> subtract(Matrix<R> matr) throws IllegalArgumentException;
+    public Matrix<R> subtract(Matrix<R> matr) throws IncompatibleDimensionsException;
     
     /**
      * multiplies the two matrices together (this x matr)
@@ -59,7 +59,7 @@ public interface Matrix<R> {
      * @return product of two matrices
      * @throws IllegalArgumentException if dimensions are incompatible
      */
-    public Matrix<R> multiply(Matrix<R> matr) throws IllegalArgumentException;
+    public Matrix<R> multiply(Matrix<R> matr) throws IncompatibleDimensionsException;
     
     /**
      * multiplies all elements in matrix by element
@@ -79,16 +79,17 @@ public interface Matrix<R> {
      * @return the determinant of this
      * @throws IllegalArgumentException if the matrix is not square
      */
-    public R determinant() throws IllegalArgumentException;
+    public R determinant() throws IncompatibleDimensionsException;
     
     /**
      * returns the minor of the given location (cofactor)
      * @param row row index of the cofactor
      * @param column column index of the cofactor
      * @return minor of the cofactor
-     * @throws IllegalArgumentException if the indices are out of range or matrix is not square
+     * @throws IndexOutOfBoundsException if the indices are out of range
+     * @throws IncompatibleDimensionsException if the matrix is not square
      */
-    public Matrix<R> minor(int row, int column) throws IllegalArgumentException;
+    public Matrix<R> minor(int row, int column) throws IndexOutOfBoundsException, IncompatibleDimensionsException;
     
     /**
      * @return the rank of the matrix
@@ -105,7 +106,7 @@ public interface Matrix<R> {
      * @return the inverse of the matrix
      * @throws IllegalArgumentException if the matrix is not invertible
      */
-    public Matrix<R> inverse() throws IllegalArgumentException;
+    public Matrix<R> inverse() throws IncompatibleDimensionsException;
     
     /**
      * computes the nullspace of the matrix, the set of vectors v such that Av = 0
@@ -124,4 +125,17 @@ public interface Matrix<R> {
      * @return false if row only contains zero, true otherwise
      */
     public boolean rowNotZero(int row);
+}
+
+class IncompatibleDimensionsException extends Exception {
+    
+    private static final long serialVersionUID = 1L;
+    
+    public IncompatibleDimensionsException() {
+        super();
+    }
+    
+    public IncompatibleDimensionsException(String message) {
+        super(message);
+    }
 }

@@ -50,7 +50,7 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
         for (int row = 0; row < entries.length; row++) {
             BigDecimal[] currentRow = entries[row];
             for (int column = 0; column < currentRow.length; column++) {
-                matrix[row][column] = currentRow[column].add(BigDecimal.ZERO);
+                matrix[row][column] = currentRow[column];
             }
         }
         numRows = entries.length;
@@ -78,11 +78,11 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
     }
     
     @Override
-    public BigDecimal getElement(int row, int column) throws IllegalArgumentException {
+    public BigDecimal getElement(int row, int column) throws IndexOutOfBoundsException {
         if (row < 0 || row >= numRows || column < 0 || column >= numCols) {
-            throw new IllegalArgumentException("Location out of bounds");
+            throw new IndexOutOfBoundsException("Location out of bounds");
         }
-        return matrix[row][column].add(BigDecimal.ZERO);
+        return matrix[row][column];
     }
 
     @Override
@@ -92,38 +92,38 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
     }
 
     @Override
-    public BigDecimal[] getRow(int row) throws IllegalArgumentException {
+    public BigDecimal[] getRow(int row) throws IndexOutOfBoundsException {
         if (row < 0 || row >= numRows) {
-            throw new IllegalArgumentException("Row index out of bounds");
+            throw new IndexOutOfBoundsException("Row index out of bounds");
         }
         
         BigDecimal[] currentRow = matrix[row];
         BigDecimal[] copyRow = new BigDecimal[numCols];
         for (int i = 0; i < numCols; i++) {
-            copyRow[i] = currentRow[i].add(BigDecimal.ZERO);
+            copyRow[i] = currentRow[i];
         }
         return copyRow;
     }
 
     @Override
-    public BigDecimal[] getColumn(int column) throws IllegalArgumentException {
+    public BigDecimal[] getColumn(int column) throws IndexOutOfBoundsException {
         if (column < 0 || column >= numCols) {
-            throw new IllegalArgumentException("Column index out of bounds");
+            throw new IndexOutOfBoundsException("Column index out of bounds");
         }
         
         BigDecimal[] copyColumn = new BigDecimal[numRows];
         for (int i = 0; i < numRows; i++) {
-            copyColumn[i] = matrix[i][column].add(BigDecimal.ZERO);
+            copyColumn[i] = matrix[i][column];
         }
         return copyColumn;
     }
 
     @Override
-    public Matrix<BigDecimal> add(Matrix<BigDecimal> matr) throws IllegalArgumentException {
+    public Matrix<BigDecimal> add(Matrix<BigDecimal> matr) throws IncompatibleDimensionsException {
         int[] thisSize = size();
         int[] thatSize = matr.size();
         if (thisSize[0] != thatSize[0] || thisSize[1] != thatSize[1]) {
-            throw new IllegalArgumentException("Invalid dimensions for addition");
+            throw new IncompatibleDimensionsException("Invalid dimensions for addition");
         }
         
         BigDecimal[][] newMatrix = new BigDecimal[thisSize[0]][thisSize[1]];
@@ -137,11 +137,11 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
     }
     
     @Override
-    public Matrix<BigDecimal> subtract(Matrix<BigDecimal> matr) throws IllegalArgumentException {
+    public Matrix<BigDecimal> subtract(Matrix<BigDecimal> matr) throws IncompatibleDimensionsException {
         int[] thisSize = size();
         int[] thatSize = matr.size();
         if (thisSize[0] != thatSize[0] || thisSize[1] != thatSize[1]) {
-            throw new IllegalArgumentException("Invalid dimensions for addition");
+            throw new IncompatibleDimensionsException("Invalid dimensions for addition");
         }
         
         BigDecimal[][] newMatrix = new BigDecimal[thisSize[0]][thisSize[1]];
@@ -155,11 +155,11 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
     }
 
     @Override
-    public Matrix<BigDecimal> multiply(Matrix<BigDecimal> matr) throws IllegalArgumentException {
+    public Matrix<BigDecimal> multiply(Matrix<BigDecimal> matr) throws IncompatibleDimensionsException {
         int[] thisSize = size();
         int[] thatSize = matr.size();
         if (thisSize[1] != thatSize[0]) {
-            throw new IllegalArgumentException("Invalid dimensions for multiplication");
+            throw new IncompatibleDimensionsException("Invalid dimensions for multiplication");
         }
         
         BigDecimal[][] newMatrix = new BigDecimal[thisSize[0]][thatSize[1]];
@@ -215,17 +215,16 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
 
     @Override
     public int nullity() {
-        int numColumns = size()[1];
         int rank = rank();
-        return numColumns - rank;
+        return numCols - rank;
     }
     
     @Override
     /**
      * @return a String representation of the matrix in the following form:
-     *      1 0 0
-     *      0 1 0
-     *      0 0 1
+     *      1   0   0
+     *      0   1   0
+     *      0   0   1
      */
     public String toString() {
         String grid = "";
@@ -266,8 +265,6 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
                 BigDecimal thisElt = getElement(i, j);
                 BigDecimal thatElt = thatMat.getElement(i, j);
                 if (thisElt.subtract(thatElt).abs().compareTo(ERROR) == 1) {
-                    System.err.println(thisElt);
-                    System.err.println(thatElt);
                     return false;
                 }
             }
@@ -289,9 +286,9 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
     }
     
     @Override
-    public BigDecimal determinant() throws IllegalArgumentException {
+    public BigDecimal determinant() throws IncompatibleDimensionsException {
         if (numRows != numCols) {
-            throw new IllegalArgumentException("Determinant not defined for non-square matrix");
+            throw new IncompatibleDimensionsException("Determinant not defined for non-square matrix");
         }
         
         if (numCols == 1) {
@@ -314,13 +311,13 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
     }
     
     @Override
-    public Matrix<BigDecimal> minor(int row, int column) throws IllegalArgumentException {
+    public Matrix<BigDecimal> minor(int row, int column) throws IndexOutOfBoundsException, IncompatibleDimensionsException {
         if (numRows != numCols) {
-            throw new IllegalArgumentException("Matrix needs to be square");
+            throw new IncompatibleDimensionsException("Matrix needs to be square");
         }
         
-        if (row >= numRows || column >= numCols) {
-            throw new IllegalArgumentException("Indices out of range");
+        if (row >= numRows || column >= numCols || row < 0 || column < 0) {
+            throw new IndexOutOfBoundsException("Indices out of range");
         }
         
         BigDecimal[][] minorMatrix = new BigDecimal[numRows - 1][numCols - 1];
@@ -331,7 +328,7 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
                 int currentCol = 0;
                 for (int colIndex = 0; colIndex < numCols; colIndex++) {
                     if (colIndex != column) {
-                        minorMatrix[currentRow][currentCol] = matrix[rowIndex][colIndex].add(BigDecimal.ZERO);
+                        minorMatrix[currentRow][currentCol] = matrix[rowIndex][colIndex];
                         currentCol++;
                     }
                 }
@@ -343,14 +340,14 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
     }
     
     @Override
-    public Matrix<BigDecimal> inverse() throws IllegalArgumentException {
+    public Matrix<BigDecimal> inverse() throws IncompatibleDimensionsException {
         if (numRows != numCols) {
-            throw new IllegalArgumentException("Inverse not defined for non-square matrix");
+            throw new IncompatibleDimensionsException("Inverse not defined for non-square matrix");
         }
         
         BigDecimal determinant = determinant();
         if (determinant.compareTo(BigDecimal.ZERO) == 0) {
-            throw new IllegalArgumentException("Inverse not defined for matrices with determinant of zero");
+            throw new IncompatibleDimensionsException("Inverse not defined for matrices with determinant of zero");
         }
         
         return rrefAndPseudoInverse().get(INV_INDEX);
@@ -378,7 +375,7 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
                 BigDecimal[] nullArr = inverse.getRow(row);
                 BigDecimal[][] colArr = new BigDecimal[dimensions[1]][1];
                 for (int columnIndex = 0; columnIndex < dimensions[1]; columnIndex++) {
-                    colArr[columnIndex][0] = nullArr[columnIndex].add(BigDecimal.ZERO);
+                    colArr[columnIndex][0] = nullArr[columnIndex];
                 }
                 Matrix<BigDecimal> columnVec = new BigDecimalMatrix(colArr);
                 nullspace.add(columnVec);
@@ -393,7 +390,7 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
         BigDecimal[][] transposeArr = new BigDecimal[numCols][numRows];
         for (int i = 0; i < numRows; i++) {
             for (int j = 0; j < numCols; j++) {
-                transposeArr[j][i] = matrix[i][j].add(BigDecimal.ZERO);
+                transposeArr[j][i] = matrix[i][j];
             }
         }
         return new BigDecimalMatrix(transposeArr);
@@ -412,7 +409,7 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
     
     /**
      * checks whether row contains nonzero values
-     * @param row array of doubles
+     * @param row array of BigDecimals
      * @return false if row only contains 0, true otherwise
      */
     private static boolean rowNotZero(BigDecimal[] row) {
@@ -446,14 +443,14 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
         BigDecimal[][] newMatrix = new BigDecimal[numRows][numCols];
         for (int row = 0; row < numRows; row++) {
             for (int column = 0; column < numCols; column++) {
-                newMatrix[row][column] = getElement(row, column).add(BigDecimal.ZERO);
+                newMatrix[row][column] = getElement(row, column);
             }
         }
         
         //perform row swaps for each column
         for (int columnCheck = 0; columnCheck < numCols; columnCheck++) {
            
-            //find any row with the nonzero value in this column
+            //find any row with a nonzero value in this column
             BigDecimal valueCheck = BigDecimal.ZERO;
             BigDecimal[] lowestRow = new BigDecimal[numCols];
             int index = columnCheck - 1;
@@ -529,14 +526,5 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
         Matrix<BigDecimal> pseudoId = new BigDecimalMatrix(id);
         List<Matrix<BigDecimal>> output = new ArrayList<>(Arrays.asList(rref, pseudoId));
         return output;
-    }
-    
-    public static void main(String args[]) {
-        double[] row1 = {1, 0, 0};
-        double[] row2 = {1, 1, 1};
-        double[] row3 = {0, 0, 1};
-        double[][] matrix = {row1, row2, row3};
-        Matrix<BigDecimal> check = new BigDecimalMatrix(matrix);
-        System.out.println(check.inverse());
     }
 }

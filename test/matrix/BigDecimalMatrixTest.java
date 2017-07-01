@@ -86,7 +86,7 @@ public class BigDecimalMatrixTest {
         boolean check = false;
         try {
             BigDecimal elt = THREE_BY_THREE.getElement(3, 1);
-        } catch (IllegalArgumentException iae) {
+        } catch (IndexOutOfBoundsException ex) {
             check = true;
         }
         String output = "Test 2\t";
@@ -98,7 +98,7 @@ public class BigDecimalMatrixTest {
         boolean check = false;
         try {
             BigDecimal elt = THREE_BY_THREE.getElement(2, -1);
-        } catch (IllegalArgumentException iae) {
+        } catch (IndexOutOfBoundsException ex) {
             check = true;
         }
         String output = "Test 3\t";
@@ -110,7 +110,7 @@ public class BigDecimalMatrixTest {
         boolean check = false;
         try {
             BigDecimal elt = THREE_BY_THREE.getElement(-1, 4);
-        } catch (IllegalArgumentException iae) {
+        } catch (IndexOutOfBoundsException ex) {
             check = true;
         }
         String output = "Test 4\t";
@@ -166,7 +166,7 @@ public class BigDecimalMatrixTest {
         boolean check = false;
         try {
             BigDecimal[] lastRow = TWO_BY_THREE.getRow(2);
-        } catch (IllegalArgumentException iae) {
+        } catch (IndexOutOfBoundsException ex) {
             check = true;
         }
         output += checkTrue("expected out of bounds", check);
@@ -201,7 +201,7 @@ public class BigDecimalMatrixTest {
         boolean check = false;
         try {
             BigDecimal[] firstColumn = TWO_BY_THREE.getRow(-1);
-        } catch (IllegalArgumentException iae) {
+        } catch (IndexOutOfBoundsException ex) {
             check = true;
         }
         output += checkTrue("expected out of bounds", check);
@@ -224,7 +224,7 @@ public class BigDecimalMatrixTest {
         boolean check = false;
         try {
             Matrix<BigDecimal> sumCheck = THREE_BY_THREE.add(TWO_BY_THREE);
-        } catch (IllegalArgumentException iae) {
+        } catch (IncompatibleDimensionsException ex) {
             check = true;
         }
         output += checkTrue("expected invalid dimensions", check);
@@ -247,7 +247,7 @@ public class BigDecimalMatrixTest {
         boolean check = false;
         try {
             Matrix<BigDecimal> differenceCheck = TWO_BY_TWO.subtract(THREE_BY_THREE);
-        } catch (IllegalArgumentException iae) {
+        } catch (IncompatibleDimensionsException ex) {
             check = true;
         }
         output += checkTrue("expected invalid dimensions", check);
@@ -285,7 +285,7 @@ public class BigDecimalMatrixTest {
         boolean check = false;
         try {
             Matrix<BigDecimal> productCheck = THREE_BY_THREE.multiply(TWO_BY_THREE);
-        } catch (IllegalArgumentException iae) {
+        } catch (IncompatibleDimensionsException ex) {
             check = true;
         }
         output += checkTrue("expected invalid dimension", check);

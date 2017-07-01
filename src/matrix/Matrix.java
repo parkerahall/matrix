@@ -125,9 +125,17 @@ public interface Matrix<R> {
      * @return false if row only contains zero, true otherwise
      */
     public boolean rowNotZero(int row);
+    
+    /**
+     * stacks the two matrices on top of each other
+     * @param bottom matrix to become the bottom rows
+     * @return the result of stacking this on top of bottom
+     * @throws IncompatibleDimensionsException if the two matrices have different numbers of columns
+     */
+    public Matrix<R> stack(Matrix<R> bottom) throws IncompatibleDimensionsException;
 }
 
-class IncompatibleDimensionsException extends Exception {
+class IncompatibleDimensionsException extends IndexOutOfBoundsException {
     
     private static final long serialVersionUID = 1L;
     

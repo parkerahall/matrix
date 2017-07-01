@@ -312,6 +312,28 @@ public class ComplexMatrix implements Matrix<Complex> {
     }
     
     @Override
+    public Matrix<Complex> stack(Matrix<Complex> bottom) throws IncompatibleDimensionsException {
+        int[] thisDims = this.size();
+        int[] thatDims = bottom.size();
+        if (thisDims[1] != thatDims[1]) {
+            throw new IncompatibleDimensionsException("Different number of columns. Cannot stack.");
+        }
+        
+        Complex[][] newMatrix = new Complex[thisDims[0] + thatDims[0]][numCols];
+        for (int i = 0; i < numRows; i++) {
+            Complex[] currentRow = this.getRow(i);
+            newMatrix[i] = currentRow;
+        }
+        
+        for (int j = 0; j < thatDims[0]; j++) {
+            Complex[] currentRow = bottom.getRow(j);
+            newMatrix[j + numRows] = currentRow;
+        }
+        
+        return new ComplexMatrix(newMatrix);
+    }
+    
+    @Override
     /**
      * @return a String representation of the matrix in the following form:
      * a + bi   c + di

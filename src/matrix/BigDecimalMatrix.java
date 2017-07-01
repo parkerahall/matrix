@@ -407,6 +407,28 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
         return false;
     }
     
+    @Override
+    public Matrix<BigDecimal> stack(Matrix<BigDecimal> bottom) throws IncompatibleDimensionsException {
+        int[] thisDims = this.size();
+        int[] thatDims = bottom.size();
+        if (thisDims[1] != thatDims[1]) {
+            throw new IncompatibleDimensionsException("Unable to stack due to different number of columns");
+        }
+        
+        BigDecimal[][] newMatrix = new BigDecimal[thisDims[0] + thatDims[1]][numCols];
+        for (int i = 0; i < numRows; i++) {
+            BigDecimal[] currentRow = this.getRow(i);
+            newMatrix[i] = currentRow;
+        }
+        
+        for (int j = 0; j < thatDims[0]; j++) {
+            BigDecimal[] currentRow = bottom.getRow(j);
+            newMatrix[numRows + j] = currentRow;
+        }
+        
+        return new BigDecimalMatrix(newMatrix);
+    }
+    
     /**
      * checks whether row contains nonzero values
      * @param row array of BigDecimals

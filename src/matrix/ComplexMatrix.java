@@ -334,6 +334,25 @@ public class ComplexMatrix implements Matrix<Complex> {
     }
     
     @Override
+    public String linearString() {
+        String output = "{";
+        for (int i = 0; i < numRows; i++) {
+            String rowString = "(";
+            Complex[] currentRow = this.getRow(i);
+            for (Complex num: currentRow) {
+                String numString = num.toString();
+                rowString += numString + " ";
+            }
+            String cleanRowString = rowString.substring(0, rowString.length() - 1);
+            cleanRowString += ")";
+            output += cleanRowString + ",";
+        }
+        String cleanOutput = output.substring(0, output.length() - 1);
+        cleanOutput += "}";
+        return cleanOutput;
+    }
+    
+    @Override
     /**
      * @return a String representation of the matrix in the following form:
      * a + bi   c + di

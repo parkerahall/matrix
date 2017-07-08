@@ -135,7 +135,7 @@ public class Complex {
     
     @Override
     public String toString() {
-        return real + " + " + imaginary + "i";
+        return real + "+" + imaginary + "i";
     }
     
     @Override

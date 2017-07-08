@@ -133,6 +133,16 @@ public interface Matrix<R> {
      * @throws IncompatibleDimensionsException if the two matrices have different numbers of columns
      */
     public Matrix<R> stack(Matrix<R> bottom) throws IncompatibleDimensionsException;
+    
+    /**
+     * Create string representation of this in the following format:
+     * {(1 2 3),(4 5 6),(7 8 9)}
+     * Matrix bookended by brackets {}
+     * Rows bookended by parentheses (), delimited by commas
+     * Elements delimited by spaces
+     * @return alternative string representation of this
+     */
+    public String linearString();
 }
 
 class IncompatibleDimensionsException extends IndexOutOfBoundsException {

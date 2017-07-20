@@ -429,25 +429,6 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
         return new BigDecimalMatrix(newMatrix);
     }
     
-    @Override
-    public String linearString() {
-        String output = "{";
-        for (int i = 0; i < numRows; i++) {
-            String rowString = "(";
-            BigDecimal[] currentRow = this.getRow(i);
-            for (BigDecimal num: currentRow) {
-                String numString = num.toPlainString();
-                rowString += numString + " ";
-            }
-            String cleanRowString = rowString.substring(0, rowString.length() - 1);
-            cleanRowString += ")";
-            output += cleanRowString + ",";
-        }
-        String cleanOutput = output.substring(0, output.length() - 1);
-        cleanOutput += "}";
-        return cleanOutput;
-    }
-    
     /**
      * checks whether row contains nonzero values
      * @param row array of BigDecimals
@@ -567,10 +548,5 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
         Matrix<BigDecimal> pseudoId = new BigDecimalMatrix(id);
         List<Matrix<BigDecimal>> output = new ArrayList<>(Arrays.asList(rref, pseudoId));
         return output;
-    }
-    
-    public static void main(String[] args) {
-        Matrix<BigDecimal> test = BigDecimalMatrix.identity(3);
-        System.out.println(test.linearString());
     }
 }

@@ -2,19 +2,21 @@ package matrix;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class ComplexMatrix implements Matrix<Complex> {
 
-    private final static double ERROR = Math.pow(10, -15);
+    private final static double ERROR = Math.pow(10, -6);
     private final static int RREF_INDEX = 0;
     private final static int INV_INDEX = 1;
     private final static Complex ZERO = new Complex(0, 0);
     private final static Complex ONE = new Complex(1, 0);
     
-    private final static List<List<Complex>> matrix = new ArrayList<>();
+    private final List<List<Complex>> matrix = new ArrayList<>();
     private final int numRows;
     private final int numCols;
     
@@ -183,7 +185,7 @@ public class ComplexMatrix implements Matrix<Complex> {
         }
         
         Complex[] firstRow = this.getRow(0);
-        Complex determinant = new Complex(0, 0);
+        Complex determinant = ZERO;
         for (int i = 0; i < numRows; i++) {
             Complex cofactor = firstRow[i];
             Complex sign = new Complex(Math.pow(-1, i), 0);
@@ -269,7 +271,7 @@ public class ComplexMatrix implements Matrix<Complex> {
         int[] dimensions = rref.size();
         
         Set<Matrix<Complex>> nullspace = new HashSet<>();
-        for (int row = 0; row < dimensions[1]; row++) {
+        for (int row = 0; row < dimensions[0]; row++) {
             if (!rref.rowNotZero(row)) {
                 Complex[] nullArr = inverse.getRow(row);
                 List<List<Complex>> colList = new ArrayList<>();
@@ -289,20 +291,87 @@ public class ComplexMatrix implements Matrix<Complex> {
     @Override
     public Matrix<Complex> transpose() {
         List<List<Complex>> newGrid = new ArrayList<>();
-        for (int col = 0; col < numRows; col++) {
+        for (int col = 0; col < numCols; col++) {
             List<Complex> newRow = new ArrayList<>();
-            for (int row = 0; row < numCols; row++) {
-                newRow.add(this.getElement(col, row));
+            for (int row = 0; row < numRows; row++) {
+                newRow.add(this.getElement(row, col));
             }
             newGrid.add(newRow);
         }
         
         return new ComplexMatrix(newGrid);
     }
+    
+    @Override
+    public Complex[] eigenvalues() throws IncompatibleDimensionsException {
+        if (numRows != numCols) {
+            throw new IncompatibleDimensionsException("Determinant not defined for non-square matrix");
+        }
+        
+        if (numCols == 1) {
+            Complex[] output = new Complex[1];
+            output[0] = this.getElement(0, 0);
+            return output;
+        }
+        
+        Polynomial<Complex>[][] polyGrid = new ComplexPoly[numRows][numCols];
+        for (int i = 0; i < numRows; i++) {
+            for (int j = 0; j < numCols; j++) {
+                Polynomial<Complex> newElt;
+                Complex matrixElt = this.getElement(i, j).mult(-1);
+                if (i == j) {
+                    Complex[] diagonalPolyArray = new Complex[2];
+                    diagonalPolyArray[0] = matrixElt;
+                    diagonalPolyArray[1] = ONE;
+                    newElt = new ComplexPoly(diagonalPolyArray);
+                } else {
+                    newElt = new ComplexPoly(matrixElt);
+                }
+                polyGrid[i][j] = newElt;
+            }
+        }
+        
+        Polynomial<Complex> determinant = ComplexMatrix.determinantFromArray(polyGrid);
+        
+        return determinant.zeroes((int)-Math.log(ERROR));
+    }
+    
+    @Override
+    public Map<Complex, Set<Matrix<Complex>>> eigenMap() throws IncompatibleDimensionsException {
+        Map<Complex, Set<Matrix<Complex>>> mapping = new HashMap<>();
+        Complex[] eigenvalues = this.eigenvalues();
+        for (Complex ev: eigenvalues) {
+            Set<Matrix<Complex>> eigenvectors = this.eigenvectors(ev);
+            mapping.put(ev, eigenvectors);
+        }
+        return mapping;
+    }
+    
+    @Override
+    public Set<Matrix<Complex>> eigenvectors(Complex eigenvalue) throws IncompatibleDimensionsException {
+        if (numRows != numCols) {
+            throw new IncompatibleDimensionsException("Matrix must be square");
+        }
+        
+        Complex[][] lambdaIArr = new Complex[numRows][numCols];
+        for (int i = 0; i < numRows; i++) {
+            for (int j = 0; j < numCols; j++) {
+                if (i == j) {
+                    lambdaIArr[i][j] = eigenvalue;
+                } else {
+                    lambdaIArr[i][j] = ZERO;
+                }
+            }
+        }
+        
+        Matrix<Complex> lambdaI = new ComplexMatrix(lambdaIArr);
+        Matrix<Complex> adjusted = this.subtract(lambdaI);
+        return adjusted.nullspace();
+    }
 
     @Override
     public boolean rowNotZero(int row) {
-        Complex[] currentRow = this.getColumn(row);
+        Complex[] currentRow = this.getRow(row);
         for (Complex elt: currentRow) {
             if (!elt.equals(ZERO)) {
                 return true;
@@ -444,12 +513,12 @@ public class ComplexMatrix implements Matrix<Complex> {
             
             // find any row with a nonzero value in this column
             Complex valueCheck = ZERO;
-            Complex[] lowestRow = new Complex[numCols];
+            List<Complex> lowestRow = new ArrayList<>();
             int index = columnCheck - 1;
             while (valueCheck.equals(ZERO) && index < numRows - 1) {
                 index++;
-                lowestRow = this.getRow(index);
-                valueCheck = lowestRow[columnCheck];
+                lowestRow = newMatrix.get(index);
+                valueCheck = lowestRow.get(columnCheck);
             }
             if (valueCheck.equals(ZERO)) {
                 continue;
@@ -460,13 +529,10 @@ public class ComplexMatrix implements Matrix<Complex> {
             
             // simplify row so that first element is 1
             Complex criticalElt = valueCheck;
-            for (int j = 0; j < lowestRow.length; j++) {
-                try {
-                    lowestRow[j] = lowestRow[j].div(criticalElt);
-                    idRow[j] = idRow[j].div(criticalElt);
-                } catch (ZeroDenominatorException zde) {
-                    System.err.println("Denominator is zero. This should never happen.");
-                }
+            for (int j = 0; j < lowestRow.size(); j++) {
+                Complex temp = lowestRow.get(j).div(criticalElt);
+                lowestRow.set(j, temp);
+                idRow[j] = idRow[j].div(criticalElt);
             }
             
             // use simplified row ot reduce rest of matrix
@@ -484,7 +550,7 @@ public class ComplexMatrix implements Matrix<Complex> {
                     }
                     
                     for (int j = 0; j < numCols; j++) {
-                        Complex temp = rowToBeReduced.get(j).sub(entryFactor.mult(lowestRow[j]));
+                        Complex temp = rowToBeReduced.get(j).sub(entryFactor.mult(lowestRow.get(j)));
                         rowToBeReduced.set(j, temp);
                         idTBR[j] = idTBR[j].sub(entryFactor.mult(idRow[j]));
                     }
@@ -493,7 +559,7 @@ public class ComplexMatrix implements Matrix<Complex> {
             
             // swap rows
             List<Complex> tmp = newMatrix.get(columnCheck);
-            newMatrix.set(columnCheck, Arrays.asList(lowestRow));
+            newMatrix.set(columnCheck, lowestRow);
             newMatrix.set(index, tmp);
             
             Complex[] idTmp = id[columnCheck];
@@ -505,7 +571,7 @@ public class ComplexMatrix implements Matrix<Complex> {
         for (int i = 0; i < numRows; i++) {
             List<Complex> currentRow = newMatrix.get(i);
             if(ComplexMatrix.rowIsZero(currentRow)) {
-                for (int j = i; j < numRows; j++) {
+                for (int j = i; j < numRows - 1; j++) {
                     List<Complex> tmp = newMatrix.get(j + 1);
                     newMatrix.set(j + 1, newMatrix.get(j));
                     newMatrix.set(j, tmp);
@@ -523,5 +589,69 @@ public class ComplexMatrix implements Matrix<Complex> {
         Matrix<Complex> pseudoId = new ComplexMatrix(id);
         List<Matrix<Complex>> output = new ArrayList<>(Arrays.asList(rref, pseudoId));
         return output;
+    }
+    
+    /**
+     * Returns minor two-dimensional array (must be square)
+     * @param grid two-dimensional array of complex polynomials
+     * @param row row index
+     * @param column column index
+     * @return two-dimensional grid representing minor matrix
+     * @throws ArrayIndexOutOfBoundsException if indices not in range 
+     */
+    private static Polynomial<Complex>[][] minorFromArray(Polynomial<Complex>[][] grid, int row, int column)
+                                                    throws ArrayIndexOutOfBoundsException {
+        List<List<Polynomial<Complex>>> newGrid = new ArrayList<>();
+        for (int rowIndex = 0; rowIndex < grid.length; rowIndex++) {
+            if (rowIndex != row) {
+                List<Polynomial<Complex>> newRow = new ArrayList<>();
+                for (int colIndex = 0; colIndex < grid.length; colIndex++) {
+                    if (colIndex != column) {
+                        newRow.add(grid[rowIndex][colIndex]);
+                    }
+                }
+                newGrid.add(newRow);
+            }
+        }
+
+        Polynomial<Complex>[][] minorArray = new ComplexPoly[grid.length - 1][grid.length - 1];
+        for (int i = 0; i < newGrid.size(); i++) {
+            List<Polynomial<Complex>> currentRow = newGrid.get(i);
+            for (int j = 0; j < newGrid.size(); j++) {
+                minorArray[i][j] = currentRow.get(j);
+            }
+        }
+
+        return minorArray;
+    }
+    
+    /**
+     * Calculate the determinant of a two-dimensional array
+     * @param grid two-dimensional array representation of a matrix (must be square)
+     * @return determinant of two-dimensional grid
+     */
+    private static Polynomial<Complex> determinantFromArray(Polynomial<Complex>[][] grid) {
+        if (grid.length == 1) {
+            return grid[0][0];
+        }
+        
+        Polynomial<Complex>[] firstRow = grid[0];
+        Polynomial<Complex> determinant = new ComplexPoly(ZERO);
+        for (int i = 0; i < grid.length; i++) {
+            Polynomial<Complex> cofactor = firstRow[i];
+            double sign = Math.pow(-1, i);
+            
+            Polynomial<Complex>[][] minor = ComplexMatrix.minorFromArray(grid, 0, i);
+            Polynomial<Complex> minorDet = ComplexMatrix.determinantFromArray(minor);
+            determinant = determinant.add(cofactor.mult(minorDet).mult(sign));
+        }
+        
+        return determinant;
+    }
+    
+    public static void main(String[] args) {
+        Complex[] firstRow = {ZERO, ONE.mult(-1)};
+        Complex[] secondRow = {ONE, ZERO};
+        Complex[][] grid = {firstRow, secondRow};
     }
 }

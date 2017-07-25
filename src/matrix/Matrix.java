@@ -1,5 +1,6 @@
 package matrix;
 
+import java.util.Map;
 import java.util.Set;
 
 /*
@@ -119,6 +120,30 @@ public interface Matrix<R> {
      * @return the tranpsoe of the matrix
      */
     public Matrix<R> transpose();
+    
+    /**
+     * Calculate the eigenvalues of this, ie
+     * the values for lambda where Av = lambda * v
+     * @return an array of Complex representations of the eigenvalues
+     * @throws IncompatibleDimensionsException if this not square
+     */
+    public Complex[] eigenvalues() throws IncompatibleDimensionsException ;
+    
+    /**
+     * Calculate all eigenvalues and eigenvectors for this
+     * @return mapping of eigenvalues to a set of vectors representing a basis for its eigenspace
+     * @throws IncompatibleDimensionsException if this not square
+     */
+    public Map<Complex, Set<Matrix<Complex>>> eigenMap() throws IncompatibleDimensionsException;
+    
+    /**
+     * Compute the eigenvectors for the specified eigenvalue, ie
+     * the vectors v such that Av = eigenvalue * v
+     * @param eigenvalue must be an eigenvalue of this
+     * @return an array of eignevectors of this corresponding to eigenvalue
+     * @throws IncompatibleDimensionsException if this not square
+     */
+    public Set<Matrix<R>> eigenvectors(Complex eigenvalue) throws IncompatibleDimensionsException ;
     
     /**
      * checks whether the row contains only zeros

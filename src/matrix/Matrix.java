@@ -143,7 +143,7 @@ public interface Matrix<R> {
      * @return an array of eignevectors of this corresponding to eigenvalue
      * @throws IncompatibleDimensionsException if this not square
      */
-    public Set<Matrix<R>> eigenvectors(Complex eigenvalue) throws IncompatibleDimensionsException ;
+    public Set<Matrix<Complex>> eigenvectors(Complex eigenvalue) throws IncompatibleDimensionsException ;
     
     /**
      * checks whether the row contains only zeros

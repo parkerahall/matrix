@@ -3,8 +3,10 @@ package matrix;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /*
@@ -13,7 +15,9 @@ import java.util.Set;
 
 public class BigDecimalMatrix implements Matrix<BigDecimal> {
     
-    private final static BigDecimal ERROR = new BigDecimal(Math.pow(10, -15));
+    private final static Complex ONE = new Complex(1, 0);
+    private final static Complex ZERO = new Complex(0, 0);
+    private final static BigDecimal ERROR = new BigDecimal(Math.pow(10, -5));
     private final static int RREF_INDEX = 0;
     private final static int INV_INDEX = 1;
     
@@ -429,6 +433,75 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
         return new BigDecimalMatrix(newMatrix);
     }
     
+    @Override
+    public Complex[] eigenvalues() throws IncompatibleDimensionsException {
+        if (numRows != numCols) {
+            throw new IncompatibleDimensionsException("Eigenvalues not defined for non-square matrix");
+        }
+        
+        if (numCols == 1) {
+            Complex[] output = new Complex[1];
+            output[0] = new Complex(this.getElement(0, 0).doubleValue(), 0);
+            return output;
+        }
+        
+        Polynomial<Complex>[][] polyGrid = new ComplexPoly[numRows][numCols];
+        for (int i = 0; i < numRows; i++) {
+            for (int j = 0; j < numCols; j++) {
+                Polynomial<Complex> newElt;
+                BigDecimal matrixElt = this.getElement(i, j).negate();
+                Complex complexElt = new Complex(matrixElt.doubleValue(), 0);
+                if (i == j) {
+                    Complex[] diagonalPolyArray = new Complex[2];
+                    diagonalPolyArray[0] = complexElt;
+                    diagonalPolyArray[1] = ONE;
+                    newElt = new ComplexPoly(diagonalPolyArray);
+                } else {
+                    newElt = new ComplexPoly(complexElt);
+                }
+                polyGrid[i][j] = newElt;
+            }
+        }
+        
+        Polynomial<Complex> determinant = BigDecimalMatrix.determinantFromArray(polyGrid);
+        
+        return determinant.zeroes((int)-Math.log(ERROR.doubleValue()));
+    }
+
+    @Override
+    public Map<Complex, Set<Matrix<Complex>>> eigenMap() throws IncompatibleDimensionsException {
+        Map<Complex, Set<Matrix<Complex>>> mapping = new HashMap<>();
+        Complex[] eigenvalues = this.eigenvalues();
+        for (Complex ev: eigenvalues) {
+            Set<Matrix<Complex>> eigenvectors = this.eigenvectors(ev);
+            mapping.put(ev, eigenvectors);
+        }
+        return mapping;
+    }
+
+    @Override
+    public Set<Matrix<Complex>> eigenvectors(Complex eigenvalue) throws IncompatibleDimensionsException {
+        if (numRows != numCols) {
+            throw new IncompatibleDimensionsException("Matrix must be square");
+        }
+        
+        Complex[][] lambdaIArr = new Complex[numRows][numCols];
+        for (int i = 0; i < numRows; i++) {
+            for (int j = 0; j < numCols; j++) {
+                if (i == j) {
+                    lambdaIArr[i][j] = eigenvalue;
+                } else {
+                    lambdaIArr[i][j] = ZERO;
+                }
+            }
+        }
+        
+        Matrix<Complex> thisComplex = this.convertToComplex();
+        Matrix<Complex> lambdaI = new ComplexMatrix(lambdaIArr);
+        Matrix<Complex> adjusted = thisComplex.subtract(lambdaI);
+        return adjusted.nullspace();
+    }
+    
     /**
      * checks whether row contains nonzero values
      * @param row array of BigDecimals
@@ -441,6 +514,77 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
             }
         }
         return false;
+    }
+    
+    /**
+     * Returns minor two-dimensional array (must be square)
+     * @param grid two-dimensional array of complex polynomials
+     * @param row row index
+     * @param column column index
+     * @return two-dimensional grid representing minor matrix
+     * @throws ArrayIndexOutOfBoundsException if indices not in range 
+     */
+    private static Polynomial<Complex>[][] minorFromArray(Polynomial<Complex>[][] grid, int row, int column)
+                                                    throws ArrayIndexOutOfBoundsException {
+        List<List<Polynomial<Complex>>> newGrid = new ArrayList<>();
+        for (int rowIndex = 0; rowIndex < grid.length; rowIndex++) {
+            if (rowIndex != row) {
+                List<Polynomial<Complex>> newRow = new ArrayList<>();
+                for (int colIndex = 0; colIndex < grid.length; colIndex++) {
+                    if (colIndex != column) {
+                        newRow.add(grid[rowIndex][colIndex]);
+                    }
+                }
+                newGrid.add(newRow);
+            }
+        }
+
+        Polynomial<Complex>[][] minorArray = new ComplexPoly[grid.length - 1][grid.length - 1];
+        for (int i = 0; i < newGrid.size(); i++) {
+            List<Polynomial<Complex>> currentRow = newGrid.get(i);
+            for (int j = 0; j < newGrid.size(); j++) {
+                minorArray[i][j] = currentRow.get(j);
+            }
+        }
+
+        return minorArray;
+    }
+    
+    /**
+     * Calculate the determinant of a two-dimensional array
+     * @param grid two-dimensional array representation of a matrix (must be square)
+     * @return determinant of two-dimensional grid
+     */
+    private static Polynomial<Complex> determinantFromArray(Polynomial<Complex>[][] grid) {
+        if (grid.length == 1) {
+            return grid[0][0];
+        }
+        
+        Polynomial<Complex>[] firstRow = grid[0];
+        Polynomial<Complex> determinant = new ComplexPoly(ZERO);
+        for (int i = 0; i < grid.length; i++) {
+            Polynomial<Complex> cofactor = firstRow[i];
+            double sign = Math.pow(-1, i);
+            
+            Polynomial<Complex>[][] minor = BigDecimalMatrix.minorFromArray(grid, 0, i);
+            Polynomial<Complex> minorDet = BigDecimalMatrix.determinantFromArray(minor);
+            determinant = determinant.add(cofactor.mult(minorDet).mult(sign));
+        }
+        
+        return determinant;
+    }
+    
+    private Matrix<Complex> convertToComplex() {
+        List<List<Complex>> newGrid = new ArrayList<>();
+        for (int i = 0; i < numRows; i++) {
+            List<Complex> newRow = new ArrayList<>();
+            for (int j = 0; j < numCols; j++) {
+                Complex newElt = new Complex(this.getElement(i, j).doubleValue(), 0);
+                newRow.add(newElt);
+            }
+            newGrid.add(newRow);
+        }
+        return new ComplexMatrix(newGrid);
     }
     
     /**
@@ -548,5 +692,13 @@ public class BigDecimalMatrix implements Matrix<BigDecimal> {
         Matrix<BigDecimal> pseudoId = new BigDecimalMatrix(id);
         List<Matrix<BigDecimal>> output = new ArrayList<>(Arrays.asList(rref, pseudoId));
         return output;
+    }
+    
+    public static void main(String[] args) {
+        int[] firstRow = {7, 2};
+        int[] secondRow = {1, 1};
+        int[][] grid = {firstRow, secondRow};
+        Matrix<BigDecimal> matrix = new BigDecimalMatrix(grid);
+        System.out.println(matrix.eigenMap());
     }
 }

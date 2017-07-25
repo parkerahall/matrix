@@ -305,7 +305,7 @@ public class ComplexMatrix implements Matrix<Complex> {
     @Override
     public Complex[] eigenvalues() throws IncompatibleDimensionsException {
         if (numRows != numCols) {
-            throw new IncompatibleDimensionsException("Determinant not defined for non-square matrix");
+            throw new IncompatibleDimensionsException("Eigenvalues not defined for non-square matrix");
         }
         
         if (numCols == 1) {
@@ -653,5 +653,7 @@ public class ComplexMatrix implements Matrix<Complex> {
         Complex[] firstRow = {ZERO, ONE.mult(-1)};
         Complex[] secondRow = {ONE, ZERO};
         Complex[][] grid = {firstRow, secondRow};
+        Matrix<Complex> matrix = new ComplexMatrix(grid);
+        System.out.println(matrix.eigenMap());
     }
 }
